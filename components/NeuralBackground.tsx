@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Line, Stars, Trail } from '@react-three/drei';
+import { Line, PerspectiveCamera, Stars, Trail } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionValue } from 'motion/react';
 
@@ -78,7 +78,7 @@ function Scene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
   return (
     <>
       <group ref={cameraGroupRef}>
-        <perspectiveCamera makeDefault position={[0, 0, 0]} fov={60} />
+        <PerspectiveCamera makeDefault position={[0, 0, 0]} fov={60} />
       </group>
 
       {/* Main Axon */}
