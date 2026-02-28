@@ -9,9 +9,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Vercel stores env vars as-is — handle surrounding quotes and literal \n
+    const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "")
+      .replace(/^["']|["']$/g, "") // strip quotes if pasted from .env file
+      .replace(/\\n/g, "\n");      // convert literal \n to real newlines
+
     const auth = new google.auth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      key: privateKey,
       scopes: ["https://www.googleapis.com/auth/drive.readonly"],
     });
 
