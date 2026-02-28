@@ -9,7 +9,7 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 
 export const metadata: Metadata = {
   title: 'NELA',
-  description: 'A desktop application for local knowledge intelligence. Uncensored, private, and lightning fast.',
+  description: 'Neural Engine for Local Analysis',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
