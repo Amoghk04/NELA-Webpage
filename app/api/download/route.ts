@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
         nodeStream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
         nodeStream.on('end', () => controller.close());
         nodeStream.on('error', (err) => controller.error(err));
-        controller.signal.addEventListener('abort', () => {
-          if (typeof (nodeStream as any).destroy === 'function') (nodeStream as any).destroy();
-        });
+      },
+      cancel() {
+        if (typeof (nodeStream as any).destroy === 'function') (nodeStream as any).destroy();
       }
     });
 
