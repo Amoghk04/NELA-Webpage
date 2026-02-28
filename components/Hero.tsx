@@ -3,6 +3,11 @@
 import { motion } from 'motion/react';
 import { Download, Terminal } from 'lucide-react';
 
+
+const handleDownload = () => {
+    window.open(`/api/download?fileId=1_goFzUgbD2tlfHoUCLixmtahbveVafaj`);
+  };
+
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-6">
@@ -48,7 +53,10 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="flex flex-col sm:flex-row gap-4 items-center"
         >
-          <button className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95">
+          <button
+            onClick={handleDownload}
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95"
+          >
             <div className="absolute inset-0 bg-[#00ffcc] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
             <span className="relative z-10 flex items-center gap-2">
               <Download className="w-5 h-5" />
