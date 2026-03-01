@@ -2,28 +2,28 @@
 
 import Image from 'next/image';
 import { motion } from 'motion/react';
-import { Shield, Zap, BrainCircuit } from 'lucide-react';
+import { TbShieldLock, TbBrain, TbWifiOff } from 'react-icons/tb';
 
 const features = [
   {
     title: 'Absolute Privacy',
     description: 'NELA runs entirely on your local machine. No data is sent to the cloud. Your prompts, your documents, and your knowledge base remain strictly confidential.',
-    icon: Shield,
-    color: 'from-emerald-400 to-emerald-600',
+    icon: TbShieldLock,
+    color: 'var(--accent)',
     align: 'left',
   },
   {
     title: 'Uncensored Intelligence',
     description: 'Break free from corporate guardrails. Load any open-source model and explore ideas without restrictions or artificial limitations.',
-    icon: BrainCircuit,
-    color: 'from-purple-400 to-purple-600',
+    icon: TbBrain,
+    color: 'var(--accent)',
     align: 'right',
   },
   {
     title: 'Internet Independent',
     description: 'No internet dependency — fully offline. Models and responses run locally on your machine without ever needing internet',
-    icon: Zap,
-    color: 'from-amber-400 to-amber-600',
+    icon: TbWifiOff,
+    color: 'var(--accent)',
     align: 'left',
   },
 ];
@@ -48,7 +48,7 @@ export default function Features() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl backdrop-blur-md border transition-colors duration-300"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--border-primary)' }}
               >
-                <feature.icon className={`w-8 h-8 text-transparent bg-clip-text bg-gradient-to-br ${feature.color}`} />
+                <feature.icon className="w-8 h-8" style={{ color: feature.color }} />
               </div>
               <h2 className="font-space text-4xl md:text-6xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 {feature.title}
