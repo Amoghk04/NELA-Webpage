@@ -26,30 +26,52 @@ function Scene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
   const impulseRef = useRef<THREE.Mesh>(null);
   const cameraGroupRef = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
-    const t = scrollYProgress.get(); // 0 to 1
-    
-    // Move impulse slightly ahead of the camera
+  // Smoothed scroll value for the camera
+  const smoothScrollRef = useRef(0);
+  // Impulse's own t parameter — walks along the curve incrementally
+  const impulseT = useRef(0);
+  // Reusable vectors to avoid per-frame allocations (prevents GC stutters)
+  const _targetPos = useMemo(() => new THREE.Vector3(), []);
+  const _impulsePos = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((_state, delta) => {
+    const rawT = scrollYProgress.get(); // 0 to 1
+
+    // Frame-rate-independent exponential damping for camera scroll
+    const damping = 6;
+    const factor = 1 - Math.exp(-damping * delta);
+    smoothScrollRef.current = THREE.MathUtils.lerp(smoothScrollRef.current, rawT, factor);
+    const t = smoothScrollRef.current;
+
+    // --- Impulse: walk along the curve incrementally, never teleport ---
+    // Target is slightly ahead of the camera
+    const impulseTarget = Math.min(t + 0.05, 1);
+    const diff = impulseTarget - impulseT.current;
+    // Max step per frame — keeps the impulse tracing the curve even during fast scrolls
+    // ~0.3 units/sec along the curve parameter
+    const maxStep = 0.3 * delta;
+    // Clamp the step so the impulse never jumps more than maxStep along the curve
+    const step = Math.sign(diff) * Math.min(Math.abs(diff), maxStep);
+    impulseT.current = THREE.MathUtils.clamp(impulseT.current + step, 0, 1);
+
     if (impulseRef.current) {
-      const impulsePos = curve.getPoint(Math.min(t + 0.05, 1));
-      impulseRef.current.position.copy(impulsePos);
+      curve.getPoint(impulseT.current, _impulsePos);
+      impulseRef.current.position.copy(_impulsePos);
     }
 
     // Move camera down the path
     if (cameraGroupRef.current) {
       const camPos = curve.getPoint(t);
-      
-      // Smoothly interpolate camera position
-      cameraGroupRef.current.position.lerp(
-        new THREE.Vector3(camPos.x * 0.3, camPos.y, camPos.z + 8), 
-        0.05
-      );
-      
+
+      // Smoothly interpolate camera position (frame-rate independent)
+      _targetPos.set(camPos.x * 0.3, camPos.y, camPos.z + 8);
+      cameraGroupRef.current.position.lerp(_targetPos, factor);
+
       // Add a slight rotation based on scroll for a "dorky" dynamic feel
       cameraGroupRef.current.rotation.z = THREE.MathUtils.lerp(
         cameraGroupRef.current.rotation.z,
-        (camPos.x * 0.05),
-        0.05
+        camPos.x * 0.05,
+        factor
       );
     }
   });

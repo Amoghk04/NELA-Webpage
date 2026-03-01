@@ -43,7 +43,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-xl md:text-3xl text-gray-400 max-w-2xl mb-12 font-light"
         >
-          Uncensored, private, and lightning-fast local knowledge intelligence. Your models, your rules.
+          Neural Engine for Local Analysis.
         </motion.p>
 
         {/* Download Button */}
