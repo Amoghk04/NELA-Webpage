@@ -45,7 +45,7 @@ export default function Features() {
           >
             {/* Text Content */}
             <div className="flex-1 space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl backdrop-blur-md border transition-colors duration-300"
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl backdrop-blur-md border"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--border-primary)' }}
               >
                 <feature.icon className="w-8 h-8" style={{ color: feature.color }} />
@@ -60,7 +60,7 @@ export default function Features() {
 
             {/* Illustrative Placeholder */}
             <div className="flex-1 w-full">
-              <div className="aspect-square md:aspect-[4/3] rounded-[3rem] border backdrop-blur-xl flex items-center justify-center p-8 relative overflow-hidden group transition-colors duration-300"
+              <div className="aspect-square md:aspect-[4/3] rounded-[3rem] border backdrop-blur-xl flex items-center justify-center p-8 relative overflow-hidden group"
                 style={{
                   background: 'var(--feature-frame-bg)',
                   borderColor: 'var(--border-primary)',
@@ -100,7 +100,7 @@ export default function Features() {
                   </div>
                 ) : (
                   // Dorky UI Element Placeholder
-                  <div className="w-full h-full border rounded-[2rem] flex flex-col p-6 relative z-10 transition-colors duration-300"
+                  <div className="w-full h-full border rounded-[2rem] flex flex-col p-6 relative z-10"
                     style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-overlay)' }}
                   >
                     <div className="flex gap-2 mb-6">

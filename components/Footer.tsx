@@ -5,7 +5,7 @@ import { Download, Github, Twitter } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="relative py-32 px-6 z-10 border-t transition-colors duration-300"
+    <footer className="relative py-32 px-6 z-10 border-t"
       style={{ background: 'var(--bg-overlay-heavy)', borderColor: 'var(--border-subtle)' }}
     >
       <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
@@ -55,7 +55,7 @@ export default function Footer() {
           </button>
         </motion.div>
 
-        <div className="w-full border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-6 transition-colors duration-300"
+        <div className="w-full border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-6"
           style={{ borderColor: 'var(--border-primary)' }}
         >
           <div className="font-space text-2xl font-bold tracking-tighter" style={{ color: 'var(--text-primary)' }}>NELA</div>

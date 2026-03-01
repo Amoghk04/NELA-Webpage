@@ -28,25 +28,25 @@ html.dark {
 }
 
 html.light {
-  --bg-primary: #f0f4f8;
-  --bg-secondary: #e8edf2;
-  --bg-card: rgba(0, 0, 0, 0.03);
-  --bg-card-hover: rgba(0, 0, 0, 0.06);
-  --bg-nav: rgba(255, 255, 255, 0.7);
-  --bg-overlay: rgba(255, 255, 255, 0.6);
-  --bg-overlay-heavy: rgba(245, 245, 245, 0.9);
-  --text-primary: #111111;
-  --text-secondary: #555555;
-  --text-tertiary: #888888;
-  --text-muted: #bbbbbb;
-  --border-primary: rgba(0, 0, 0, 0.1);
-  --border-subtle: rgba(0, 0, 0, 0.05);
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #ede7db;
+  --bg-card: rgba(120, 100, 60, 0.06);
+  --bg-card-hover: rgba(120, 100, 60, 0.1);
+  --bg-nav: rgba(245, 240, 232, 0.8);
+  --bg-overlay: rgba(245, 240, 232, 0.7);
+  --bg-overlay-heavy: rgba(240, 235, 225, 0.92);
+  --text-primary: #2c2416;
+  --text-secondary: #6b5d4d;
+  --text-tertiary: #9a8b78;
+  --text-muted: #c4b9a8;
+  --border-primary: rgba(90, 70, 40, 0.15);
+  --border-subtle: rgba(90, 70, 40, 0.08);
   --accent: #00b894;
   --accent-glow: rgba(0, 184, 148, 0.2);
-  --gradient-text-from: #111111;
-  --gradient-text-to: rgba(17, 17, 17, 0.5);
-  --code-bg: rgba(0, 0, 0, 0.05);
-  --feature-frame-bg: linear-gradient(to bottom right, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2));
+  --gradient-text-from: #2c2416;
+  --gradient-text-to: rgba(44, 36, 22, 0.5);
+  --code-bg: rgba(90, 70, 40, 0.08);
+  --feature-frame-bg: linear-gradient(to bottom right, rgba(90, 70, 40, 0.12), rgba(90, 70, 40, 0.04));
   --selection-bg: #00b894;
   --selection-text: #ffffff;
   color-scheme: light;
@@ -55,7 +55,6 @@ html.light {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
 ::selection {

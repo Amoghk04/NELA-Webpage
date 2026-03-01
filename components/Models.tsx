@@ -1,33 +1,40 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Cpu, Database, HardDrive } from 'lucide-react';
+import { TbDownload, TbFileUpload, TbMessageChatbot, TbArrowBadgeRightFilled } from 'react-icons/tb';
 
-const models = [
+const steps = [
   {
-    name: 'Llama 3',
-    description: 'Meta\'s highly capable 8B parameter model. Excellent for general knowledge and coding tasks.',
-    icon: Cpu,
-    color: 'text-blue-400',
+    step: '01',
+    title: 'Setup NELA & Models',
+    description: 'Download NELA and load any GGUF model from the download page. One-click setup — no configuration needed.',
+    icon: TbDownload,
+    tags: ['Download NELA', 'Load GGUF Models', 'One-Click Setup'],
   },
   {
-    name: 'Mistral',
-    description: 'The 7B powerhouse. Exceptional reasoning capabilities and context handling.',
-    icon: Database,
-    color: 'text-orange-400',
+    step: '02',
+    title: 'Upload Your Data',
+    description: 'Feed in any file type — PDFs, PowerPoints, Word docs, audio files, and more. NELA processes them all locally.',
+    icon: TbFileUpload,
+    tags: ['PDFs', 'PPTs', 'Docs', 'Audio', 'Any Format'],
   },
   {
-    name: 'Phi-3',
-    description: 'Microsoft\'s small language model. Perfect for lower-end hardware without sacrificing quality.',
-    icon: HardDrive,
-    color: 'text-green-400',
+    step: '03',
+    title: 'Get Intelligent Responses',
+    description: 'Interact through rich chats, visual mindmaps, and AI-generated podcasts — all powered by your local models.',
+    icon: TbMessageChatbot,
+    tags: ['Interactive Chats', 'Mindmaps', 'Podcasts'],
   },
 ];
 
 export default function Models() {
   return (
-    <section className="relative py-32 px-6 z-10 backdrop-blur-3xl border-y transition-colors duration-300"
-      style={{ background: 'var(--bg-overlay)', borderColor: 'var(--border-subtle)' }}
+    <section className="relative py-32 px-6 z-10 backdrop-blur-3xl border-y-2"
+      style={{ 
+        background: 'var(--bg-overlay)', 
+        borderColor: 'var(--accent)',
+        boxShadow: '0 0 30px var(--accent-glow)'
+      }}
     >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-24">
@@ -37,7 +44,7 @@ export default function Models() {
             viewport={{ once: true }}
             className="font-space text-5xl md:text-7xl font-bold tracking-tighter mb-6"
           >
-            Bring Your Own Weights
+            Run Models Locally
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -47,50 +54,126 @@ export default function Models() {
             className="text-xl max-w-2xl mx-auto font-light"
             style={{ color: 'var(--text-secondary)' }}
           >
-            NELA supports the GGUF format, allowing you to run a massive ecosystem of open-source models optimized for your specific hardware.
+            Three simple steps to unlock private, offline AI intelligence on your own machine.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {models.map((model, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              className="group relative p-8 rounded-[2.5rem] border hover:opacity-90 transition-all duration-500 overflow-hidden"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border-primary)' }}
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <model.icon className={`w-32 h-32 ${model.color}`} />
-              </div>
-              
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-full border flex items-center justify-center mb-8"
-                  style={{ background: 'var(--bg-overlay)', borderColor: 'var(--border-primary)' }}
-                >
-                  <model.icon className={`w-6 h-6 ${model.color}`} />
+        {/* Desktop: horizontal flow with arrows */}
+        <div className="hidden md:flex items-stretch gap-0">
+          {steps.map((item, index) => (
+            <div key={index} className="flex items-stretch flex-1">
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                className="relative flex-1 p-8 rounded-[2.5rem] border overflow-hidden flex flex-col"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--accent)' }}
+              >
+                {/* Large background icon */}
+                <div className="absolute top-4 right-4 opacity-[0.05]">
+                  <item.icon className="w-36 h-36" />
                 </div>
-                <h3 className="font-space text-2xl font-bold mb-4">{model.name}</h3>
-                <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {model.description}
-                </p>
-              </div>
-            </motion.div>
+
+                <div className="relative z-10 flex flex-col flex-1">
+                  <span
+                    className="font-mono text-sm font-bold tracking-widest mb-6"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    STEP {item.step}
+                  </span>
+
+                  <h3 className="font-space text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                    {item.title}
+                  </h3>
+                  <p className="leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+                    {item.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    {item.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 rounded-full text-xs font-mono border"
+                        style={{
+                          borderColor: 'var(--border-primary)',
+                          color: 'var(--text-tertiary)',
+                          background: 'var(--bg-overlay)',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {index < steps.length - 1 && (
+                <div className="flex items-center px-3">
+                  <TbArrowBadgeRightFilled className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="mt-16 p-8 rounded-[3rem] border border-dashed flex flex-col items-center justify-center text-center group transition-colors duration-300"
-          style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-card)' }}
-        >
-          <div className="font-mono mb-2" style={{ color: 'var(--accent)' }}>Drag & Drop .gguf files</div>
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Instantly load custom models into your local intelligence hub.</p>
-        </motion.div>
+        {/* Mobile: vertical flow with arrows */}
+        <div className="flex md:hidden flex-col items-stretch gap-0">
+          {steps.map((item, index) => (
+            <div key={index} className="flex flex-col items-center">
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                className="relative w-full p-8 rounded-[2.5rem] border overflow-hidden flex flex-col"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--accent)' }}
+              >
+                <div className="absolute top-4 right-4 opacity-[0.05]">
+                  <item.icon className="w-36 h-36" />
+                </div>
+
+                <div className="relative z-10 flex flex-col">
+                  <span
+                    className="font-mono text-sm font-bold tracking-widest mb-6"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    STEP {item.step}
+                  </span>
+
+                  <h3 className="font-space text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                    {item.title}
+                  </h3>
+                  <p className="leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+                    {item.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    {item.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 rounded-full text-xs font-mono border"
+                        style={{
+                          borderColor: 'var(--border-primary)',
+                          color: 'var(--text-tertiary)',
+                          background: 'var(--bg-overlay)',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {index < steps.length - 1 && (
+                <div className="flex items-center justify-center py-3 rotate-90">
+                  <TbArrowBadgeRightFilled className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
