@@ -1,110 +1,161 @@
-import * as Lucide from 'lucide-react';
+'use client';
 
-function IconOrFallback({ name, size, className }: { name: string; size?: number; className?: string }) {
-  // access icon component by name from lucide namespace
-  const Comp = (Lucide as any)[name];
-  if (Comp) return <Comp className={className} size={size ?? 24} />;
+import { motion } from 'motion/react';
+import { Download, Cpu, HardDrive, Server } from 'lucide-react';
+import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
 
-  return (
-    <div className={`w-9 h-9 mr-4 rounded bg-white/5 flex items-center justify-center ${className ?? ''}`}>
-      <svg width={size ?? 24} height={size ?? 24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="18" height="18" rx="3" fill="currentColor" opacity="0.06" />
-      </svg>
-    </div>
-  );
-}
+const models = [
+  {
+    name: 'Small',
+    desc: 'Fast inference, low footprint',
+    size: '1.2 GB',
+    speed: '~45 tok/s',
+    icon: Cpu,
+    href: '/downloads/models/small',
+  },
+  {
+    name: 'Medium',
+    desc: 'Balanced speed & quality',
+    size: '4.7 GB',
+    speed: '~28 tok/s',
+    icon: HardDrive,
+    href: '/downloads/models/medium',
+  },
+  {
+    name: 'Large',
+    desc: 'Maximum accuracy',
+    size: '13 GB',
+    speed: '~12 tok/s',
+    icon: Server,
+    href: '/downloads/models/large',
+  },
+];
+
+const platforms = [
+  {
+    name: 'Windows',
+    desc: '64-bit installer (.exe)',
+    icon: FaWindows,
+    href: '/downloads/installer/windows',
+  },
+  {
+    name: 'macOS',
+    desc: 'Universal binary',
+    icon: FaApple,
+    href: '/downloads/installer/macos',
+  },
+  {
+    name: 'Linux',
+    desc: 'Deb / AppImage',
+    icon: FaLinux,
+    href: '/downloads/installer/linux',
+  },
+];
 
 export default function DownloadPage() {
   return (
-    <main className="max-w-6xl mx-auto px-6 py-16">
-      <h1 className="text-3xl font-bold mb-8">Downloads</h1>
+    <main className="relative min-h-screen pt-32 pb-24 px-6">
+      <div className="max-w-5xl mx-auto">
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <section id="models" className="bg-white/5 p-6 rounded-lg">
-          <h2 className="text-2xl font-semibold mb-4">Models</h2>
-          <p className="mb-6 text-white/80">Select a model to download. Sizes and speeds vary.</p>
+        {/* Hero header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-20"
+        >
+          <h1 className="font-space text-5xl md:text-7xl font-bold tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
+            Downloads
+          </h1>
+          <p className="text-lg text-gray-500 font-light max-w-md mx-auto">
+            Everything you need to run NELA locally.
+          </p>
+        </motion.div>
 
-          <ul className="space-y-3">
-            <li className="flex items-center justify-between bg-black/30 p-3 rounded">
-              <div className="flex items-center">
-                <IconOrFallback name="Cpu" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">Small</div>
-                  <div className="text-sm text-white/70">Fast — low resource footprint</div>
+        {/* ── Installer Section ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="mb-24"
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+            <span className="font-mono text-xs text-[#00ffcc] uppercase tracking-widest">Installer</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            {platforms.map((p, i) => (
+              <motion.a
+                key={p.name}
+                href={p.href}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25 + i * 0.1 }}
+                className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 flex flex-col items-center text-center transition-all duration-300 hover:border-[#00ffcc]/30 hover:bg-white/[0.04]"
+              >
+                <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:bg-[#00ffcc]/10 transition-colors duration-300">
+                  <p.icon className="w-8 h-8 text-gray-400 group-hover:text-[#00ffcc] transition-colors duration-300" />
                 </div>
-              </div>
-              <a href="/downloads/models/small" className="text-sm px-3 py-1 bg-[#00ffcc] text-black rounded flex items-center">
-                Download
-              </a>
-            </li>
+                <span className="font-space text-lg font-semibold mb-1">{p.name}</span>
+                <span className="text-sm text-gray-500 font-light">{p.desc}</span>
+                <Download className="w-4 h-4 text-gray-600 mt-4 group-hover:text-[#00ffcc] transition-colors duration-300" />
+              </motion.a>
+            ))}
+          </div>
+        </motion.section>
 
-            <li className="flex items-center justify-between bg-black/30 p-3 rounded">
-              <div className="flex items-center">
-                <IconOrFallback name="HardDrive" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">Medium</div>
-                  <div className="text-sm text-white/70">Balanced speed and quality</div>
-                </div>
-              </div>
-              <a href="/downloads/models/medium" className="text-sm px-3 py-1 bg-[#00ffcc] text-black rounded flex items-center">
-                Download
-              </a>
-            </li>
-
-            <li className="flex items-center justify-between bg-black/30 p-3 rounded">
-              <div className="flex items-center">
-                <IconOrFallback name="Server" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">Large</div>
-                  <div className="text-sm text-white/70">Highest quality — larger size</div>
-                </div>
-              </div>
-              <a href="/downloads/models/large" className="text-sm px-3 py-1 bg-[#00ffcc] text-black rounded flex items-center">
-                Download
-              </a>
-            </li>
-          </ul>
-        </section>
-
-        <section id="installer" className="bg-white/5 p-6 rounded-lg">
-          <h2 className="text-2xl font-semibold mb-4">Installer</h2>
-          <p className="mb-6 text-white/80">Download the installer for your operating system.</p>
+        {/* ── Models Section ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.35 }}
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+            <span className="font-mono text-xs text-[#00ffcc] uppercase tracking-widest">Models</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+          </div>
 
           <div className="space-y-3">
-            <a href="/downloads/installer/macos" className="flex items-center justify-between bg-black/30 p-3 rounded hover:bg-black/40">
-              <div className="flex items-center">
-                <IconOrFallback name="Apple" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">macOS</div>
-                  <div className="text-sm text-white/70">Universal (Intel & Apple Silicon)</div>
+            {models.map((m, i) => (
+              <motion.a
+                key={m.name}
+                href={m.href}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.45 + i * 0.1 }}
+                className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm px-6 py-5 transition-all duration-300 hover:border-[#00ffcc]/30 hover:bg-white/[0.04]"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-[#00ffcc]/10 transition-colors duration-300">
+                    <m.icon className="w-5 h-5 text-gray-400 group-hover:text-[#00ffcc] transition-colors duration-300" />
+                  </div>
+                  <div>
+                    <span className="font-space text-base font-semibold">{m.name}</span>
+                    <p className="text-sm text-gray-500 font-light">{m.desc}</p>
+                  </div>
                 </div>
-              </div>
-              <span className="px-3 py-1 bg-[#00ffcc] text-black rounded">Download</span>
-            </a>
 
-            <a href="/downloads/installer/windows" className="flex items-center justify-between bg-black/30 p-3 rounded hover:bg-black/40">
-              <div className="flex items-center">
-                <IconOrFallback name="Monitor" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">Windows</div>
-                  <div className="text-sm text-white/70">64-bit installer (exe)</div>
+                <div className="flex items-center gap-6">
+                  <div className="hidden sm:flex gap-6 text-right">
+                    <div>
+                      <div className="font-mono text-xs text-gray-500">Size</div>
+                      <div className="font-mono text-sm text-gray-300">{m.size}</div>
+                    </div>
+                    <div>
+                      <div className="font-mono text-xs text-gray-500">Speed</div>
+                      <div className="font-mono text-sm text-gray-300">{m.speed}</div>
+                    </div>
+                  </div>
+                  <Download className="w-4 h-4 text-gray-600 group-hover:text-[#00ffcc] transition-colors duration-300" />
                 </div>
-              </div>
-              <span className="px-3 py-1 bg-[#00ffcc] text-black rounded">Download</span>
-            </a>
-
-            <a href="/downloads/installer/linux" className="flex items-center justify-between bg-black/30 p-3 rounded hover:bg-black/40">
-              <div className="flex items-center">
-                <IconOrFallback name="Terminal" className="flex-none mr-4" size={36} />
-                <div>
-                  <div className="font-medium">Linux</div>
-                  <div className="text-sm text-white/70">Deb / RPM / AppImage available</div>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-[#00ffcc] text-black rounded">Download</span>
-            </a>
+              </motion.a>
+            ))}
           </div>
-        </section>
+        </motion.section>
+
       </div>
     </main>
   );
