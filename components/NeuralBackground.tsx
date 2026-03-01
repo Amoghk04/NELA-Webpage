@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Line, PerspectiveCamera, Stars, Trail } from '@react-three/drei';
+import { Line, PerspectiveCamera, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionValue } from 'motion/react';
 
@@ -28,35 +28,65 @@ function Scene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
 
   // Smoothed scroll value for the camera
   const smoothScrollRef = useRef(0);
-  // Impulse's own t parameter — walks along the curve incrementally
-  const impulseT = useRef(0);
+  // Impulse uses its own smooth damping — separate from camera for natural feel
+  const smoothImpulseT = useRef(0);
   // Reusable vectors to avoid per-frame allocations (prevents GC stutters)
   const _targetPos = useMemo(() => new THREE.Vector3(), []);
   const _impulsePos = useMemo(() => new THREE.Vector3(), []);
 
+  // Custom curve-based trail (replaces Trail which glitches on direction reversal)
+  const trailLineRef = useRef<any>(null);
+  const trailSegments = 60;
+  const trailSpan = 0.07; // how far behind on the curve the trail extends
+  const _tp = useMemo(() => new THREE.Vector3(), []);
+
   useFrame((_state, delta) => {
+    // Clamp delta to avoid huge jumps when the tab loses focus
+    const dt = Math.min(delta, 0.05);
     const rawT = scrollYProgress.get(); // 0 to 1
 
     // Frame-rate-independent exponential damping for camera scroll
-    const damping = 6;
-    const factor = 1 - Math.exp(-damping * delta);
-    smoothScrollRef.current = THREE.MathUtils.lerp(smoothScrollRef.current, rawT, factor);
+    const camDamping = 6;
+    const camFactor = 1 - Math.exp(-camDamping * dt);
+    smoothScrollRef.current = THREE.MathUtils.lerp(smoothScrollRef.current, rawT, camFactor);
     const t = smoothScrollRef.current;
 
-    // --- Impulse: walk along the curve incrementally, never teleport ---
-    // Target is slightly ahead of the camera
+    // --- Impulse: smooth exponential damping (no step-clamping) ---
+    // Higher damping = more responsive to scroll; lower = more floaty/smooth
+    const impulseDamping = 4;
+    const impulseFactor = 1 - Math.exp(-impulseDamping * dt);
     const impulseTarget = Math.min(t + 0.05, 1);
-    const diff = impulseTarget - impulseT.current;
-    // Max step per frame — keeps the impulse tracing the curve even during fast scrolls
-    // ~0.3 units/sec along the curve parameter
-    const maxStep = 0.3 * delta;
-    // Clamp the step so the impulse never jumps more than maxStep along the curve
-    const step = Math.sign(diff) * Math.min(Math.abs(diff), maxStep);
-    impulseT.current = THREE.MathUtils.clamp(impulseT.current + step, 0, 1);
+    smoothImpulseT.current = THREE.MathUtils.lerp(smoothImpulseT.current, impulseTarget, impulseFactor);
 
     if (impulseRef.current) {
-      curve.getPoint(impulseT.current, _impulsePos);
+      curve.getPoint(smoothImpulseT.current, _impulsePos);
       impulseRef.current.position.copy(_impulsePos);
+    }
+
+    // --- Update curve-based trail: sample points on the curve behind the impulse ---
+    if (trailLineRef.current) {
+      const headT = smoothImpulseT.current;
+      const tailT = Math.max(headT - trailSpan, 0);
+      const positions = new Float32Array(trailSegments * 3);
+      const colors = new Float32Array(trailSegments * 3);
+
+      for (let i = 0; i < trailSegments; i++) {
+        const frac = i / (trailSegments - 1); // 0 = tail, 1 = head
+        const curveT = THREE.MathUtils.lerp(tailT, headT, frac);
+        curve.getPoint(curveT, _tp);
+        positions[i * 3]     = _tp.x;
+        positions[i * 3 + 1] = _tp.y;
+        positions[i * 3 + 2] = _tp.z;
+
+        // Fade: transparent at tail → bright #00ffcc at head (quadratic ease)
+        const intensity = frac * frac;
+        colors[i * 3]     = 0;
+        colors[i * 3 + 1] = intensity;
+        colors[i * 3 + 2] = intensity * 0.8;
+      }
+
+      trailLineRef.current.geometry.setPositions(positions);
+      trailLineRef.current.geometry.setColors(colors);
     }
 
     // Move camera down the path
@@ -65,13 +95,13 @@ function Scene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
 
       // Smoothly interpolate camera position (frame-rate independent)
       _targetPos.set(camPos.x * 0.3, camPos.y, camPos.z + 8);
-      cameraGroupRef.current.position.lerp(_targetPos, factor);
+      cameraGroupRef.current.position.lerp(_targetPos, camFactor);
 
       // Add a slight rotation based on scroll for a "dorky" dynamic feel
       cameraGroupRef.current.rotation.z = THREE.MathUtils.lerp(
         cameraGroupRef.current.rotation.z,
         camPos.x * 0.05,
-        factor
+        camFactor
       );
     }
   });
@@ -117,14 +147,22 @@ function Scene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
         </group>
       ))}
 
-      {/* The Impulse */}
-      <Trail width={3} color="#00ffcc" length={15} decay={1} local={false}>
-        <mesh ref={impulseRef}>
-          <sphereGeometry args={[0.2, 16, 16]} />
-          <meshBasicMaterial color="#ffffff" />
-          <pointLight color="#00ffcc" intensity={8} distance={15} />
-        </mesh>
-      </Trail>
+      {/* Custom curve-sampled trail — always follows the curve, never glitches */}
+      <Line
+        ref={trailLineRef}
+        points={Array.from({ length: trailSegments }, () => [0, 0, 0] as [number, number, number])}
+        vertexColors={Array.from({ length: trailSegments }, () => [0, 0, 0] as [number, number, number])}
+        lineWidth={8}
+        transparent
+        opacity={0.9}
+      />
+
+      {/* The Impulse head */}
+      <mesh ref={impulseRef}>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial color="#ffffff" />
+        <pointLight color="#00ffcc" intensity={8} distance={15} />
+      </mesh>
     </>
   );
 }
