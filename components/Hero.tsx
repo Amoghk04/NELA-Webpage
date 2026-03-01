@@ -5,7 +5,7 @@ import { Download, Terminal } from 'lucide-react';
 
 
 const handleDownload = () => {
-    window.open(`/api/download?fileId=1_goFzUgbD2tlfHoUCLixmtahbveVafaj`);
+    window.open(`/api/download?fileId=1UehjyBsXYgfxTt-AaqElpUt7mYrzgfX9`);
   };
 
 export default function Hero() {
