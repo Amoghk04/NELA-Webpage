@@ -4,17 +4,17 @@ export default function DocsSidebar() {
       <nav className="bg-transparent">
         <ul className="space-y-3 text-sm">
           <li>
-            <a href="#installation" className="text-[#00ffcc] hover:underline">
+            <a href="#installation" className="hover:underline" style={{ color: 'var(--accent)' }}>
               Installation
             </a>
           </li>
           <li>
-            <a href="#models" className="text-white/90 hover:underline">
+            <a href="#models" className="hover:underline" style={{ color: 'var(--text-primary)' }}>
               Models
             </a>
           </li>
           <li>
-            <a href="#how-it-works" className="text-white/90 hover:underline">
+            <a href="#how-it-works" className="hover:underline" style={{ color: 'var(--text-primary)' }}>
               How it works
             </a>
           </li>

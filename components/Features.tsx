@@ -45,20 +45,27 @@ export default function Features() {
           >
             {/* Text Content */}
             <div className="flex-1 space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl backdrop-blur-md border transition-colors duration-300"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border-primary)' }}
+              >
                 <feature.icon className={`w-8 h-8 text-transparent bg-clip-text bg-gradient-to-br ${feature.color}`} />
               </div>
-              <h2 className="font-space text-4xl md:text-6xl font-bold tracking-tight">
+              <h2 className="font-space text-4xl md:text-6xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 {feature.title}
               </h2>
-              <p className="text-xl text-gray-400 font-light leading-relaxed">
+              <p className="text-xl font-light leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                 {feature.description}
               </p>
             </div>
 
             {/* Illustrative Placeholder */}
             <div className="flex-1 w-full">
-              <div className="aspect-square md:aspect-[4/3] rounded-[3rem] bg-gradient-to-br from-white/5 to-white/0 border border-white/10 backdrop-blur-xl flex items-center justify-center p-8 relative overflow-hidden group">
+              <div className="aspect-square md:aspect-[4/3] rounded-[3rem] border backdrop-blur-xl flex items-center justify-center p-8 relative overflow-hidden group transition-colors duration-300"
+                style={{
+                  background: 'var(--feature-frame-bg)',
+                  borderColor: 'var(--border-primary)',
+                }}
+              >
                 <div className="absolute inset-0 bg-gradient-to-br opacity-20 transition-opacity duration-500 group-hover:opacity-40" />
 
                 {feature.title === 'Absolute Privacy' ? (
@@ -93,13 +100,15 @@ export default function Features() {
                   </div>
                 ) : (
                   // Dorky UI Element Placeholder
-                  <div className="w-full h-full border border-white/5 rounded-[2rem] bg-black/50 flex flex-col p-6 relative z-10">
+                  <div className="w-full h-full border rounded-[2rem] flex flex-col p-6 relative z-10 transition-colors duration-300"
+                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-overlay)' }}
+                  >
                     <div className="flex gap-2 mb-6">
                       <div className="w-3 h-3 rounded-full bg-red-500/50" />
                       <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                       <div className="w-3 h-3 rounded-full bg-green-500/50" />
                     </div>
-                    <div className="flex-1 font-mono text-sm text-[#00ffcc]/70 space-y-2">
+                    <div className="flex-1 font-mono text-sm space-y-2" style={{ color: 'var(--accent)', opacity: 0.7 }}>
                       <p>{'>'} Initializing {feature.title.toLowerCase().replace(' ', '_')} module...</p>
                       <p>{'>'} Status: ONLINE</p>
                       <p className="animate-pulse">{'>'} _</p>

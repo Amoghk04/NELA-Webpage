@@ -18,10 +18,11 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md mb-8 border transition-colors duration-300"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-primary)' }}
         >
-          <Terminal className="w-4 h-4 text-[#00ffcc]" />
-          <span className="font-mono text-xs text-[#00ffcc] uppercase tracking-wider">
+          <Terminal className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+          <span className="font-mono text-xs uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
             Initializing local neural pathways...
           </span>
         </motion.div>
@@ -31,7 +32,8 @@ export default function Hero() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, type: 'spring', bounce: 0.4 }}
-          className="font-space text-7xl md:text-9xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40"
+          className="font-space text-7xl md:text-9xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent"
+          style={{ backgroundImage: 'linear-gradient(to bottom, var(--gradient-text-from), var(--gradient-text-to))' }}
         >
           NELA
         </motion.h1>
@@ -41,7 +43,8 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xl md:text-3xl text-gray-400 max-w-2xl mb-12 font-light"
+          className="text-xl md:text-3xl max-w-2xl mb-12 font-light"
+          style={{ color: 'var(--text-secondary)' }}
         >
           Neural Engine for Local Analysis.
         </motion.p>
@@ -55,16 +58,17 @@ export default function Hero() {
         >
           <button
             onClick={handleDownload}
-            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95"
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95"
+            style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)' }}
           >
-            <div className="absolute inset-0 bg-[#00ffcc] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            <div className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" style={{ background: 'var(--accent)' }} />
             <span className="relative z-10 flex items-center gap-2">
               <Download className="w-5 h-5" />
               Download for Windows
             </span>
           </button>
           
-          <span className="font-mono text-sm text-gray-500">
+          <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>
             v1.0.4-beta • 142MB .exe
           </span>
         </motion.div>

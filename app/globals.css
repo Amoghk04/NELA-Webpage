@@ -1,1 +1,64 @@
 @import "tailwindcss";
+
+/* ── Theme Variables ── */
+:root,
+html.dark {
+  --bg-primary: #06061a;
+  --bg-secondary: #0a0a1a;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.1);
+  --bg-nav: rgba(0, 0, 0, 0.5);
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-overlay-heavy: rgba(0, 0, 0, 0.8);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-muted: #374151;
+  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --accent: #00ffcc;
+  --accent-glow: rgba(0, 255, 204, 0.3);
+  --gradient-text-from: #ffffff;
+  --gradient-text-to: rgba(255, 255, 255, 0.4);
+  --code-bg: rgba(0, 0, 0, 0.4);
+  --feature-frame-bg: linear-gradient(to bottom right, rgba(255, 255, 255, 0.05), transparent);
+  --selection-bg: #00ffcc;
+  --selection-text: #000000;
+  color-scheme: dark;
+}
+
+html.light {
+  --bg-primary: #f0f4f8;
+  --bg-secondary: #e8edf2;
+  --bg-card: rgba(0, 0, 0, 0.03);
+  --bg-card-hover: rgba(0, 0, 0, 0.06);
+  --bg-nav: rgba(255, 255, 255, 0.7);
+  --bg-overlay: rgba(255, 255, 255, 0.6);
+  --bg-overlay-heavy: rgba(245, 245, 245, 0.9);
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-tertiary: #888888;
+  --text-muted: #bbbbbb;
+  --border-primary: rgba(0, 0, 0, 0.1);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --accent: #00b894;
+  --accent-glow: rgba(0, 184, 148, 0.2);
+  --gradient-text-from: #111111;
+  --gradient-text-to: rgba(17, 17, 17, 0.5);
+  --code-bg: rgba(0, 0, 0, 0.05);
+  --feature-frame-bg: linear-gradient(to bottom right, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2));
+  --selection-bg: #00b894;
+  --selection-text: #ffffff;
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}

@@ -64,10 +64,12 @@ export default function DownloadPage() {
           transition={{ duration: 0.8 }}
           className="text-center mb-20"
         >
-          <h1 className="font-space text-5xl md:text-7xl font-bold tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
+          <h1 className="font-space text-5xl md:text-7xl font-bold tracking-tighter mb-4 bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(to bottom, var(--gradient-text-from), var(--gradient-text-to))' }}
+          >
             Downloads
           </h1>
-          <p className="text-lg text-gray-500 font-light max-w-md mx-auto">
+          <p className="text-lg font-light max-w-md mx-auto" style={{ color: 'var(--text-tertiary)' }}>
             Everything you need to run NELA locally.
           </p>
         </motion.div>
@@ -80,9 +82,9 @@ export default function DownloadPage() {
           className="mb-24"
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-            <span className="font-mono text-xs text-[#00ffcc] uppercase tracking-widest">Installer</span>
-            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, var(--border-primary))' }} />
+            <span className="font-mono text-xs uppercase tracking-widest" style={{ color: 'var(--accent)' }}>Installer</span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, var(--border-primary))' }} />
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4">
@@ -93,14 +95,17 @@ export default function DownloadPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.25 + i * 0.1 }}
-                className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 flex flex-col items-center text-center transition-all duration-300 hover:border-[#00ffcc]/30 hover:bg-white/[0.04]"
+                className="group relative rounded-2xl border backdrop-blur-sm p-6 flex flex-col items-center text-center transition-all duration-300"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:bg-[#00ffcc]/10 transition-colors duration-300">
-                  <p.icon className="w-8 h-8 text-gray-400 group-hover:text-[#00ffcc] transition-colors duration-300" />
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-4 transition-colors duration-300"
+                  style={{ background: 'var(--bg-card)' }}
+                >
+                  <p.icon className="w-8 h-8 transition-colors duration-300" style={{ color: 'var(--text-secondary)' }} />
                 </div>
-                <span className="font-space text-lg font-semibold mb-1">{p.name}</span>
-                <span className="text-sm text-gray-500 font-light">{p.desc}</span>
-                <Download className="w-4 h-4 text-gray-600 mt-4 group-hover:text-[#00ffcc] transition-colors duration-300" />
+                <span className="font-space text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
+                <span className="text-sm font-light" style={{ color: 'var(--text-tertiary)' }}>{p.desc}</span>
+                <Download className="w-4 h-4 mt-4 transition-colors duration-300" style={{ color: 'var(--text-muted)' }} />
               </motion.a>
             ))}
           </div>
@@ -113,9 +118,9 @@ export default function DownloadPage() {
           transition={{ duration: 0.8, delay: 0.35 }}
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-            <span className="font-mono text-xs text-[#00ffcc] uppercase tracking-widest">Models</span>
-            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, var(--border-primary))' }} />
+            <span className="font-mono text-xs uppercase tracking-widest" style={{ color: 'var(--accent)' }}>Models</span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, var(--border-primary))' }} />
           </div>
 
           <div className="space-y-3">
@@ -126,30 +131,33 @@ export default function DownloadPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.45 + i * 0.1 }}
-                className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm px-6 py-5 transition-all duration-300 hover:border-[#00ffcc]/30 hover:bg-white/[0.04]"
+                className="group flex items-center justify-between rounded-2xl border backdrop-blur-sm px-6 py-5 transition-all duration-300"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}
               >
                 <div className="flex items-center gap-5">
-                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-[#00ffcc]/10 transition-colors duration-300">
-                    <m.icon className="w-5 h-5 text-gray-400 group-hover:text-[#00ffcc] transition-colors duration-300" />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300"
+                    style={{ background: 'var(--bg-card)' }}
+                  >
+                    <m.icon className="w-5 h-5 transition-colors duration-300" style={{ color: 'var(--text-secondary)' }} />
                   </div>
                   <div>
-                    <span className="font-space text-base font-semibold">{m.name}</span>
-                    <p className="text-sm text-gray-500 font-light">{m.desc}</p>
+                    <span className="font-space text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{m.name}</span>
+                    <p className="text-sm font-light" style={{ color: 'var(--text-tertiary)' }}>{m.desc}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div className="hidden sm:flex gap-6 text-right">
                     <div>
-                      <div className="font-mono text-xs text-gray-500">Size</div>
-                      <div className="font-mono text-sm text-gray-300">{m.size}</div>
+                      <div className="font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>Size</div>
+                      <div className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>{m.size}</div>
                     </div>
                     <div>
-                      <div className="font-mono text-xs text-gray-500">Speed</div>
-                      <div className="font-mono text-sm text-gray-300">{m.speed}</div>
+                      <div className="font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>Speed</div>
+                      <div className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>{m.speed}</div>
                     </div>
                   </div>
-                  <Download className="w-4 h-4 text-gray-600 group-hover:text-[#00ffcc] transition-colors duration-300" />
+                  <Download className="w-4 h-4 transition-colors duration-300" style={{ color: 'var(--text-muted)' }} />
                 </div>
               </motion.a>
             ))}
