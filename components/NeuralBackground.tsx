@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useRef, useMemo, Suspense, useState, useEffect, useCallback } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Line, PerspectiveCamera, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionValue } from 'motion/react';
@@ -539,36 +539,64 @@ function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; 
   );
 }
 
+/* ────────────────── Scene ready notifier ────────────────── */
+
+function SceneReady({ onReady }: { onReady: () => void }) {
+  const { gl } = useThree();
+  const called = useRef(false);
+  useEffect(() => {
+    if (!called.current && gl) {
+      // Wait one frame so all children have rendered
+      requestAnimationFrame(() => {
+        called.current = true;
+        onReady();
+      });
+    }
+  }, [gl, onReady]);
+  return null;
+}
+
 export default function NeuralBackground({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
   const { theme } = useTheme();
   const tc = THEME_COLORS[theme];
+  const [ready, setReady] = useState(false);
+  const handleReady = useCallback(() => setReady(true), []);
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
+    <div
+      className="fixed inset-0 z-0 pointer-events-none"
+      style={{
+        opacity: ready ? 1 : 0,
+        transition: 'opacity 1.2s ease-in-out',
+      }}
+    >
       <Canvas dpr={[1, 1.5]} performance={{ min: 0.5 }}>
-        <color attach="background" args={[tc.bg]} />
-        <ambientLight intensity={tc.ambientIntensity} />
+        <Suspense fallback={null}>
+          <SceneReady onReady={handleReady} />
+          <color attach="background" args={[tc.bg]} />
+          <ambientLight intensity={tc.ambientIntensity} />
 
-        {/* Stars — dark mode only */}
-        {tc.showStars && <Stars radius={100} depth={50} count={1200} factor={6} saturation={1} fade speed={1} />}
+          {/* Stars — dark mode only */}
+          {tc.showStars && <Stars radius={100} depth={50} count={1200} factor={6} saturation={1} fade speed={1} />}
 
-        {/* Atmospheric layers */}
-        {tc.showStars && (
-          <>
-            <NebulaClouds tc={tc} />
-            <FloatingParticles tc={tc} isLightMode={!tc.showStars} />
-            <AmbientGeo tc={tc} zOffset={0} isLightMode={!tc.showStars} />
-          </>
-        )}
+          {/* Atmospheric layers */}
+          {tc.showStars && (
+            <>
+              <NebulaClouds tc={tc} />
+              <FloatingParticles tc={tc} isLightMode={!tc.showStars} />
+              <AmbientGeo tc={tc} zOffset={0} isLightMode={!tc.showStars} />
+            </>
+          )}
 
-        {/* Minimalist Light Mode Art */}
-        {!tc.showStars && <StaticLightModeArt tc={tc} />}
+          {/* Minimalist Light Mode Art */}
+          {!tc.showStars && <StaticLightModeArt tc={tc} />}
 
-        {/* Neural impulse scene */}
-        <Scene scrollYProgress={scrollYProgress} tc={tc} />
+          {/* Neural impulse scene */}
+          <Scene scrollYProgress={scrollYProgress} tc={tc} />
 
-        {/* 3D Earth at the bottom — impulse merges into it */}
-        <EarthGlobe tc={tc} scrollYProgress={scrollYProgress} />
+          {/* 3D Earth at the bottom — impulse merges into it */}
+          <EarthGlobe tc={tc} scrollYProgress={scrollYProgress} />
+        </Suspense>
       </Canvas>
     </div>
   );
