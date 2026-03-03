@@ -238,25 +238,41 @@ const EARTH_CENTER: [number, number, number] = [0, -34, -2];
 
 function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionValue<number> }) {
   const innerRef = useRef<THREE.Group>(null);
+  const cloudsRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const mergeGlowRef = useRef<THREE.PointLight>(null);
   const energyRingsRef = useRef<(THREE.Mesh | null)[]>([]);
 
   const isLightMode = !tc.showStars;
 
-  // Load Earth textures — blue marble for both modes (vivid & visible)
-  // Topology map used as bump for extra depth in dark mode
-  const earthTexture = useTexture('/earth-texture.jpg');
-  const earthBump = useTexture('/earth-topology.png');
+  // Load all Earth textures
+  const [
+    dayTexture,
+    nightTexture,
+    cloudsTexture,
+    normalMap,
+    specularMap,
+  ] = useTexture([
+    '/8k_earth_daymap.jpg',
+    '/8k_earth_nightmap.jpg',
+    '/8k_earth_clouds.jpg',
+    '/normal_map.png',
+    '/specular_map.png',
+  ]);
+
+  const earthTexture = isLightMode ? dayTexture : nightTexture;
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     const scroll = scrollYProgress.get();
     const proximity = Math.max(0, (scroll - 0.6) / 0.4); // 0 at 60% scroll, 1 at 100%
 
-    // Gentle rotation
+    // Gentle rotation — clouds rotate slightly faster for realism
     if (innerRef.current) {
       innerRef.current.rotation.y = t * 0.08;
+    }
+    if (cloudsRef.current) {
+      cloudsRef.current.rotation.y = t * 0.10;
     }
 
     // Atmosphere glow — pulses brighter as impulse approaches
@@ -298,28 +314,33 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
           <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
           <meshStandardMaterial
             map={earthTexture}
-            emissiveMap={earthTexture}
-            emissive={isLightMode ? '#fffaf0' : '#88eedd'}
-            emissiveIntensity={isLightMode ? 0.8 : 0.8}
-            bumpMap={earthBump}
-            bumpScale={isLightMode ? 0.05 : 0.05}
-            roughness={isLightMode ? 0.3 : 0.3}
-            metalness={isLightMode ? 0.1 : 0.1}
+            emissiveMap={isLightMode ? earthTexture : nightTexture}
+            emissive={isLightMode ? '#fffaf0' : '#ffeeaa'}
+            emissiveIntensity={isLightMode ? 0.6 : 2.8}
+            normalMap={normalMap}
+            normalScale={[0.8, 0.8] as unknown as THREE.Vector2}
+            roughnessMap={specularMap}
+            roughness={isLightMode ? 0.4 : 0.85}
+            metalnessMap={specularMap}
+            metalness={isLightMode ? 0.15 : 0.0}
           />
         </mesh>
 
-        {/* Subtle wireframe overlay — gives a holographic/digital feel */}
-        <mesh>
-          <sphereGeometry args={[EARTH_RADIUS * 1.002, 32, 32]} />
-          <meshBasicMaterial
-            color={isLightMode ? '#4338ca' : tc.accent}
-            wireframe
-            transparent
-            opacity={isLightMode ? 0.08 : 0.1}
-          />
-        </mesh>
       </group>
 
+      {/* Cloud layer — slightly larger sphere, rotates independently */}
+      <mesh ref={cloudsRef}>
+        <sphereGeometry args={[EARTH_RADIUS * 1.012, 64, 64]} />
+        <meshStandardMaterial
+          alphaMap={cloudsTexture}
+          color={isLightMode ? '#ffffff' : '#334466'}
+          transparent
+          opacity={isLightMode ? 0.55 : 0.15}
+          depthWrite={false}
+          roughness={1}
+          metalness={0}
+        />
+      </mesh>
       {/* Atmosphere glow — outer back-face sphere */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[EARTH_RADIUS * 1.25, 64, 64]} />
@@ -332,17 +353,21 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
         />
       </mesh>
 
-      {/* Constant ambient light inside globe for baseline visibility */}
-      <pointLight color={isLightMode ? '#ffffff' : '#ffffff'} intensity={isLightMode ? 20 : 15} distance={EARTH_RADIUS * 6} position={[0, 0, 0]} />
+      {/* Constant ambient light — dim in dark mode so city lights pop, bright in light mode */}
+      <pointLight color={isLightMode ? '#ffffff' : '#112233'} intensity={isLightMode ? 20 : 2} distance={EARTH_RADIUS * 6} position={[0, 0, 0]} />
 
-      {/* External lights to illuminate the globe texture */}
-      <pointLight color="#ffffff" intensity={isLightMode ? 15 : 12} distance={30} position={[5, 5, 8]} />
-      <pointLight color={isLightMode ? '#e0e7ff' : '#aaddff'} intensity={isLightMode ? 10 : 8} distance={25} position={[-5, -3, 6]} />
+      {/* External lights — light mode only; night map is self-illuminating */}
+      {isLightMode && (
+        <>
+          <pointLight color="#ffffff" intensity={15} distance={30} position={[5, 5, 8]} />
+          <pointLight color="#e0e7ff" intensity={10} distance={25} position={[-5, -3, 6]} />
+        </>
+      )}
 
       {/* Merge point light — illuminates the top of the Earth on arrival */}
       <pointLight
         ref={mergeGlowRef}
-        color={tc.accent}
+        color={isLightMode ? '#f59e0b' : tc.accent}
         intensity={0}
         distance={25}
         position={[0, EARTH_RADIUS + 0.5, 0]}
@@ -358,8 +383,8 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
           position={[0, EARTH_RADIUS, 0]}
           rotation={[Math.PI / 2, 0, 0]}
         >
-          <torusGeometry args={[1, 0.03, 8, 64]} />
-          <meshBasicMaterial color={tc.accent} transparent opacity={0} />
+          <torusGeometry args={[1, isLightMode ? 0.06 : 0.03, 8, 64]} />
+          <meshBasicMaterial color={isLightMode ? '#f59e0b' : tc.accent} transparent opacity={0} />
         </mesh>
       ))}
     </group>
