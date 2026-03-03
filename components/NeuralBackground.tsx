@@ -28,17 +28,17 @@ const THEME_COLORS = {
     bg: '#f5f0e8',
     fogColor: '#f5f0e8',
     fogNear: 60, fogFar: 120,
-    accent: '#00b894',
-    axonOpacity: 0.3,
+    accent: '#4f46e5',
+    axonOpacity: 0.45,
     ambientIntensity: 0.55,
     showStars: false,
-    particleColor: '#7a6b50',
-    particleOpacity: 0.25,
-    geoColor: '#00b894',
-    geoOpacity: 0.1,
-    nebulaColor1: '#d4c9b0',
-    nebulaColor2: '#c5d5c0',
-    nebulaColor3: '#d5cbbe',
+    particleColor: '#4338ca',
+    particleOpacity: 0.35,
+    geoColor: '#6366f1',
+    geoOpacity: 0.15,
+    nebulaColor1: '#c7d2fe',
+    nebulaColor2: '#ddd6fe',
+    nebulaColor3: '#e0e7ff',
   },
 } as const;
 
@@ -231,8 +231,189 @@ function StaticLightModeArt({ tc }: { tc: TC }) {
   );
 }
 
+/* ────────────────── 3D Holographic Earth Globe ────────────────── */
+
+const EARTH_RADIUS = 4;
+const EARTH_CENTER: [number, number, number] = [0, -34, -2];
+
+function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionValue<number> }) {
+  const innerRef = useRef<THREE.Group>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const mergeGlowRef = useRef<THREE.PointLight>(null);
+  const energyRingsRef = useRef<(THREE.Mesh | null)[]>([]);
+
+  const isLightMode = !tc.showStars;
+
+  // Fibonacci-distributed surface dots with noise-based "continent" clusters
+  const dotsGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    const positions: number[] = [];
+    const count = isLightMode ? 1500 : 2000;
+
+    for (let i = 0; i < count; i++) {
+      const y = 1 - (i / (count - 1)) * 2;
+      const radiusAtY = Math.sqrt(1 - y * y);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const x = Math.cos(theta) * radiusAtY;
+      const z = Math.sin(theta) * radiusAtY;
+
+      // Simple multi-octave noise to form cluster patterns
+      const n =
+        Math.sin(x * 5 + 1) * Math.cos(y * 3 + z * 4) +
+        Math.sin(y * 7) * Math.cos(z * 5 + x * 3) * 0.5;
+
+      if (n > 0.1) {
+        const r = EARTH_RADIUS * 1.005;
+        positions.push(x * r, y * r, z * r);
+      }
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+    return geo;
+  }, [isLightMode]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const scroll = scrollYProgress.get();
+    const proximity = Math.max(0, (scroll - 0.6) / 0.4); // 0 at 60% scroll, 1 at 100%
+
+    // Gentle rotation
+    if (innerRef.current) {
+      innerRef.current.rotation.y = t * 0.08;
+    }
+
+    // Atmosphere glow — pulses brighter as impulse approaches
+    if (glowRef.current) {
+      const mat = glowRef.current.material as THREE.MeshBasicMaterial;
+      const pulse = 1 + Math.sin(t * 3) * 0.2 * proximity;
+      mat.opacity = 0.08 + proximity * 0.2 * pulse;
+      glowRef.current.scale.setScalar(1 + proximity * 0.12);
+    }
+
+    // Merge point light intensity
+    if (mergeGlowRef.current) {
+      mergeGlowRef.current.intensity = proximity * 30 * (1 + Math.sin(t * 4) * 0.25);
+    }
+
+    // Energy rings sweeping from top to bottom across the sphere
+    const mergeProximity = Math.max(0, (scroll - 0.75) / 0.25);
+    energyRingsRef.current.forEach((ring, i) => {
+      if (!ring) return;
+      const wave = ((t * 0.4 + i * 0.33) % 1);
+      const lat = wave * Math.PI;
+      const r = EARTH_RADIUS * Math.sin(lat);
+      const y = EARTH_RADIUS * Math.cos(lat);
+
+      ring.position.y = y;
+      ring.scale.setScalar(Math.max(r, 0.01));
+      ring.visible = r > 0.1;
+
+      const mat = ring.material as THREE.MeshBasicMaterial;
+      mat.opacity = mergeProximity * 0.9 * (1 - wave * 0.5);
+    });
+  });
+
+  const latitudes = isLightMode ? [-60, -30, 0, 30, 60] : [-60, -30, 0, 30, 60];
+  const longitudes = isLightMode ? [0, 30, 60, 90, 120, 150] : [0, 30, 60, 90, 120, 150];
+
+  return (
+    <group position={EARTH_CENTER}>
+      <group ref={innerRef}>
+        {/* Core sphere — visible tinted fill */}
+        <mesh>
+          <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
+          <meshStandardMaterial
+            color={isLightMode ? '#312e81' : tc.accent}
+            transparent
+            opacity={isLightMode ? 0.18 : 0.15}
+            emissive={isLightMode ? '#4f46e5' : tc.accent}
+            emissiveIntensity={isLightMode ? 0.5 : 0.4}
+          />
+        </mesh>
+
+        {/* Wireframe overlay */}
+        <mesh>
+          <sphereGeometry args={[EARTH_RADIUS * 1.001, 24, 24]} />
+          <meshBasicMaterial color={isLightMode ? '#4338ca' : tc.accent} wireframe transparent opacity={isLightMode ? 0.35 : 0.22} />
+        </mesh>
+
+        {/* Latitude rings */}
+        {latitudes.map((lat) => {
+          const phi = (90 - lat) * (Math.PI / 180);
+          const r = EARTH_RADIUS * Math.sin(phi);
+          const y = EARTH_RADIUS * Math.cos(phi);
+          return (
+            <mesh key={`lat-${lat}`} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[r, isLightMode ? 0.04 : 0.03, 8, 128]} />
+              <meshBasicMaterial color={isLightMode ? '#6366f1' : tc.accent} transparent opacity={isLightMode ? 0.5 : 0.4} />
+            </mesh>
+          );
+        })}
+
+        {/* Longitude rings */}
+        {longitudes.map((lon) => (
+          <mesh key={`lon-${lon}`} rotation={[0, (lon * Math.PI) / 180, 0]}>
+            <torusGeometry args={[EARTH_RADIUS, isLightMode ? 0.04 : 0.03, 8, 128]} />
+            <meshBasicMaterial color={isLightMode ? '#6366f1' : tc.accent} transparent opacity={isLightMode ? 0.5 : 0.4} />
+          </mesh>
+        ))}
+
+        {/* Surface data dots — digital "continent" clusters */}
+        <points geometry={dotsGeo}>
+          <pointsMaterial
+            color={isLightMode ? '#4338ca' : tc.accent}
+            size={isLightMode ? 0.12 : 0.1}
+            transparent
+            opacity={isLightMode ? 0.85 : 0.8}
+            sizeAttenuation
+          />
+        </points>
+      </group>
+
+      {/* Atmosphere glow — outer back-face sphere */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[EARTH_RADIUS * 1.25, 64, 64]} />
+        <meshBasicMaterial
+          color={isLightMode ? '#818cf8' : tc.accent}
+          transparent
+          opacity={isLightMode ? 0.12 : 0.08}
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Constant ambient light inside globe for baseline visibility */}
+      <pointLight color={tc.accent} intensity={isLightMode ? 8 : 5} distance={EARTH_RADIUS * 4} position={[0, 0, 0]} />
+
+      {/* Merge point light — illuminates the top of the Earth on arrival */}
+      <pointLight
+        ref={mergeGlowRef}
+        color={tc.accent}
+        intensity={0}
+        distance={25}
+        position={[0, EARTH_RADIUS + 0.5, 0]}
+      />
+
+      {/* Energy rings — pulse from merge point across the globe */}
+      {[0, 1, 2].map((i) => (
+        <mesh
+          key={`ering-${i}`}
+          ref={(el) => {
+            energyRingsRef.current[i] = el;
+          }}
+          position={[0, EARTH_RADIUS, 0]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <torusGeometry args={[1, 0.03, 8, 64]} />
+          <meshBasicMaterial color={tc.accent} transparent opacity={0} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; tc: TC }) {
-  // Create a long, curvy path for the neural circuit
+  // Create a long, curvy path for the neural circuit — ends at the top of the Earth
   const curve = useMemo(() => {
     return new THREE.CatmullRomCurve3([
       new THREE.Vector3(0, 10, 0),
@@ -243,12 +424,13 @@ function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; 
       new THREE.Vector3(-5, -15, -2),
       new THREE.Vector3(4, -20, -6),
       new THREE.Vector3(-2, -25, -3),
-      new THREE.Vector3(0, -30, 0),
+      new THREE.Vector3(0, -30, -2),  // meets the top of the Earth sphere
     ]);
   }, []);
 
   const points = useMemo(() => curve.getPoints(300), [curve]);
   const impulseRef = useRef<THREE.Mesh>(null);
+  const impulseLightRef = useRef<THREE.PointLight>(null);
   const cameraGroupRef = useRef<THREE.Group>(null);
 
   // Smoothed scroll value for the camera
@@ -286,6 +468,16 @@ function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; 
     if (impulseRef.current) {
       curve.getPoint(smoothImpulseT.current, _impulsePos);
       impulseRef.current.position.copy(_impulsePos);
+
+      // Merge effect — impulse grows and intensifies near the Earth
+      const mergeT = Math.max(0, (smoothImpulseT.current - 0.7) / 0.3);
+      impulseRef.current.scale.setScalar(1 + mergeT * 2);
+    }
+
+    if (impulseLightRef.current) {
+      const mergeT = Math.max(0, (smoothImpulseT.current - 0.7) / 0.3);
+      impulseLightRef.current.intensity = 8 + mergeT * 25;
+      impulseLightRef.current.distance = 15 + mergeT * 20;
     }
 
     // --- Update curve-based trail: sample points on the curve behind the impulse ---
@@ -303,11 +495,19 @@ function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; 
         positions[i * 3 + 1] = _tp.y;
         positions[i * 3 + 2] = _tp.z;
 
-        // Fade: transparent at tail → bright #00ffcc at head (quadratic ease)
+        // Fade: transparent at tail → bright at head (quadratic ease)
         const intensity = frac * frac;
-        colors[i * 3]     = 0;
-        colors[i * 3 + 1] = intensity;
-        colors[i * 3 + 2] = intensity * 0.8;
+        if (tc.showStars) {
+          // Dark mode: cyan-green trail (#00ffcc)
+          colors[i * 3]     = 0;
+          colors[i * 3 + 1] = intensity;
+          colors[i * 3 + 2] = intensity * 0.8;
+        } else {
+          // Light mode: warm amber trail (#f59e0b)
+          colors[i * 3]     = intensity * 0.96;
+          colors[i * 3 + 1] = intensity * 0.62;
+          colors[i * 3 + 2] = intensity * 0.04;
+        }
       }
 
       trailLineRef.current.geometry.setPositions(positions);
@@ -353,8 +553,8 @@ function Scene({ scrollYProgress, tc }: { scrollYProgress: MotionValue<number>; 
       {/* The Impulse head */}
       <mesh ref={impulseRef}>
         <sphereGeometry args={[0.2, 16, 16]} />
-        <meshBasicMaterial color={tc.showStars ? '#ffffff' : '#000000'} />
-        <pointLight color={tc.accent} intensity={8} distance={15} />
+        <meshBasicMaterial color={tc.showStars ? '#ffffff' : '#f59e0b'} />
+        <pointLight ref={impulseLightRef} color={tc.showStars ? tc.accent : '#f59e0b'} intensity={8} distance={15} />
       </mesh>
     </>
   );
@@ -387,6 +587,9 @@ export default function NeuralBackground({ scrollYProgress }: { scrollYProgress:
 
         {/* Neural impulse scene */}
         <Scene scrollYProgress={scrollYProgress} tc={tc} />
+
+        {/* 3D Earth at the bottom — impulse merges into it */}
+        <EarthGlobe tc={tc} scrollYProgress={scrollYProgress} />
       </Canvas>
     </div>
   );
