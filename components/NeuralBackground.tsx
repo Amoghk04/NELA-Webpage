@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Line, PerspectiveCamera, Stars } from '@react-three/drei';
+import { Line, PerspectiveCamera, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionValue } from 'motion/react';
 import { useTheme } from './ThemeProvider';
@@ -27,10 +27,10 @@ const THEME_COLORS = {
   light: {
     bg: '#f5f0e8',
     fogColor: '#f5f0e8',
-    fogNear: 60, fogFar: 120,
+    fogNear: 80, fogFar: 200,
     accent: '#4f46e5',
     axonOpacity: 0.45,
-    ambientIntensity: 0.55,
+    ambientIntensity: 0.9,
     showStars: false,
     particleColor: '#4338ca',
     particleOpacity: 0.35,
@@ -244,33 +244,10 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
 
   const isLightMode = !tc.showStars;
 
-  // Fibonacci-distributed surface dots with noise-based "continent" clusters
-  const dotsGeo = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
-    const positions: number[] = [];
-    const count = isLightMode ? 1500 : 2000;
-
-    for (let i = 0; i < count; i++) {
-      const y = 1 - (i / (count - 1)) * 2;
-      const radiusAtY = Math.sqrt(1 - y * y);
-      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-      const x = Math.cos(theta) * radiusAtY;
-      const z = Math.sin(theta) * radiusAtY;
-
-      // Simple multi-octave noise to form cluster patterns
-      const n =
-        Math.sin(x * 5 + 1) * Math.cos(y * 3 + z * 4) +
-        Math.sin(y * 7) * Math.cos(z * 5 + x * 3) * 0.5;
-
-      if (n > 0.1) {
-        const r = EARTH_RADIUS * 1.005;
-        positions.push(x * r, y * r, z * r);
-      }
-    }
-
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-    return geo;
-  }, [isLightMode]);
+  // Load Earth textures — blue marble for both modes (vivid & visible)
+  // Topology map used as bump for extra depth in dark mode
+  const earthTexture = useTexture('/earth-texture.jpg');
+  const earthBump = useTexture('/earth-topology.png');
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -313,61 +290,34 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
     });
   });
 
-  const latitudes = isLightMode ? [-60, -30, 0, 30, 60] : [-60, -30, 0, 30, 60];
-  const longitudes = isLightMode ? [0, 30, 60, 90, 120, 150] : [0, 30, 60, 90, 120, 150];
-
   return (
     <group position={EARTH_CENTER}>
       <group ref={innerRef}>
-        {/* Core sphere — visible tinted fill */}
+        {/* Textured Earth sphere */}
         <mesh>
           <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
           <meshStandardMaterial
-            color={isLightMode ? '#312e81' : tc.accent}
-            transparent
-            opacity={isLightMode ? 0.18 : 0.15}
-            emissive={isLightMode ? '#4f46e5' : tc.accent}
-            emissiveIntensity={isLightMode ? 0.5 : 0.4}
+            map={earthTexture}
+            emissiveMap={earthTexture}
+            emissive={isLightMode ? '#fffaf0' : '#88eedd'}
+            emissiveIntensity={isLightMode ? 0.8 : 0.8}
+            bumpMap={earthBump}
+            bumpScale={isLightMode ? 0.05 : 0.05}
+            roughness={isLightMode ? 0.3 : 0.3}
+            metalness={isLightMode ? 0.1 : 0.1}
           />
         </mesh>
 
-        {/* Wireframe overlay */}
+        {/* Subtle wireframe overlay — gives a holographic/digital feel */}
         <mesh>
-          <sphereGeometry args={[EARTH_RADIUS * 1.001, 24, 24]} />
-          <meshBasicMaterial color={isLightMode ? '#4338ca' : tc.accent} wireframe transparent opacity={isLightMode ? 0.35 : 0.22} />
-        </mesh>
-
-        {/* Latitude rings */}
-        {latitudes.map((lat) => {
-          const phi = (90 - lat) * (Math.PI / 180);
-          const r = EARTH_RADIUS * Math.sin(phi);
-          const y = EARTH_RADIUS * Math.cos(phi);
-          return (
-            <mesh key={`lat-${lat}`} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r, isLightMode ? 0.04 : 0.03, 8, 128]} />
-              <meshBasicMaterial color={isLightMode ? '#6366f1' : tc.accent} transparent opacity={isLightMode ? 0.5 : 0.4} />
-            </mesh>
-          );
-        })}
-
-        {/* Longitude rings */}
-        {longitudes.map((lon) => (
-          <mesh key={`lon-${lon}`} rotation={[0, (lon * Math.PI) / 180, 0]}>
-            <torusGeometry args={[EARTH_RADIUS, isLightMode ? 0.04 : 0.03, 8, 128]} />
-            <meshBasicMaterial color={isLightMode ? '#6366f1' : tc.accent} transparent opacity={isLightMode ? 0.5 : 0.4} />
-          </mesh>
-        ))}
-
-        {/* Surface data dots — digital "continent" clusters */}
-        <points geometry={dotsGeo}>
-          <pointsMaterial
+          <sphereGeometry args={[EARTH_RADIUS * 1.002, 32, 32]} />
+          <meshBasicMaterial
             color={isLightMode ? '#4338ca' : tc.accent}
-            size={isLightMode ? 0.12 : 0.1}
+            wireframe
             transparent
-            opacity={isLightMode ? 0.85 : 0.8}
-            sizeAttenuation
+            opacity={isLightMode ? 0.08 : 0.1}
           />
-        </points>
+        </mesh>
       </group>
 
       {/* Atmosphere glow — outer back-face sphere */}
@@ -383,7 +333,11 @@ function EarthGlobe({ tc, scrollYProgress }: { tc: TC; scrollYProgress: MotionVa
       </mesh>
 
       {/* Constant ambient light inside globe for baseline visibility */}
-      <pointLight color={tc.accent} intensity={isLightMode ? 8 : 5} distance={EARTH_RADIUS * 4} position={[0, 0, 0]} />
+      <pointLight color={isLightMode ? '#ffffff' : '#ffffff'} intensity={isLightMode ? 20 : 15} distance={EARTH_RADIUS * 6} position={[0, 0, 0]} />
+
+      {/* External lights to illuminate the globe texture */}
+      <pointLight color="#ffffff" intensity={isLightMode ? 15 : 12} distance={30} position={[5, 5, 8]} />
+      <pointLight color={isLightMode ? '#e0e7ff' : '#aaddff'} intensity={isLightMode ? 10 : 8} distance={25} position={[-5, -3, 6]} />
 
       {/* Merge point light — illuminates the top of the Earth on arrival */}
       <pointLight
