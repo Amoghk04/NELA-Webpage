@@ -1,21 +1,38 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Download, Terminal } from 'lucide-react';
+import { Download, Terminal, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  fetchReleases,
+  latestWindowsExe,
+  formatBytes,
+  type ReleaseAsset,
+  type ReleasesData,
+} from '@/lib/releases';
 
-const GITHUB_REPO = 'Uncharted0110/NELA---Ninakkan-Ella-Local-Aagi';
-const RELEASE_VERSION = 'v0.1.0';
-const RELEASE_OS = 'Windows'
-const RELEASE_FILE = 'GenHat_0.1.0_x64-setup.exe';
-
-//https://github.com/Uncharted0110/NELA---Ninakkan-Ella-Local-Aagi/releases/download/v0.1.0-Windows/GenHat_0.1.0_x64-setup.exe
-const DOWNLOAD_URL = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_VERSION}-${RELEASE_OS}/${RELEASE_FILE}`;
-
-const handleDownload = () => {
-  window.open(DOWNLOAD_URL);
-};
+// Start the fetch the instant this module is loaded — before React even mounts.
+// By the time useEffect fires, the response is likely already in-flight or done.
+const releasesPreload = fetchReleases().catch(() => null);
 
 export default function Hero() {
+  const [asset, setAsset] = useState<ReleaseAsset | null>(null);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    releasesPreload.then((data: ReleasesData | null) => {
+      if (data) {
+        setAsset(latestWindowsExe(data));
+        setLatestVersion(data.latestVersion);
+      }
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const handleDownload = () => {
+    if (asset) window.open(asset.download_url);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-6">
       <div className="max-w-5xl mx-auto w-full flex flex-col items-center text-center z-10">
@@ -65,18 +82,27 @@ export default function Hero() {
         >
           <button
             onClick={handleDownload}
-            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95"
+            disabled={loading || !asset}
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full font-bold text-lg overflow-hidden transition-transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)' }}
           >
             <div className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" style={{ background: 'var(--accent)' }} />
             <span className="relative z-10 flex items-center gap-2">
-              <Download className="w-5 h-5" />
-              Download for Windows
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Download className="w-5 h-5" />
+              )}
+              {loading ? 'Loading...' : 'Download for Windows'}
             </span>
           </button>
 
           <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>
-            v1.0.4-beta • 142MB .exe
+            {loading
+              ? 'Fetching latest release...'
+              : asset
+              ? `${latestVersion} • ${formatBytes(asset.size)} • .exe`
+              : 'No Windows release found'}
           </span>
         </motion.div>
 
