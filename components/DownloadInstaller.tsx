@@ -3,13 +3,14 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, ChevronDown } from 'lucide-react';
 import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   assetsFor,
   formatBytes,
   assetTypeLabel,
   type ReleasesData,
   type ReleaseAsset,
+  type ParsedVersion,
 } from '@/lib/releases';
 
 type OsIcon = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -20,29 +21,169 @@ const OS_META: Record<string, { icon: OsIcon; label: string; desc: string }> = {
   macOS:   { icon: FaApple,   label: 'macOS',   desc: 'Universal binary' },
 };
 
+// ── Version dropdown ──────────────────────────────────────────────────────────
+interface VersionSelectProps {
+  versions: ParsedVersion[];
+  latestVersion: string | null;
+  value: string;
+  onChange: (ver: string) => void;
+}
+
+function VersionSelect({ versions, latestVersion, value, onChange }: VersionSelectProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const displayLabel = (ver: string) =>
+    ver === latestVersion ? `${ver}  (latest)` : ver;
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-3 font-mono text-sm px-4 py-2 rounded-lg border backdrop-blur-sm cursor-pointer outline-none transition-colors duration-200"
+        style={{
+          background: open ? 'var(--bg-card-hover)' : 'var(--bg-card)',
+          borderColor: open ? 'var(--accent)' : 'var(--border-subtle)',
+          color: 'var(--text-primary)',
+          boxShadow: open ? '0 0 0 2px var(--accent-glow)' : 'none',
+        }}
+      >
+        <span>{displayLabel(value)}</span>
+        <motion.div
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+        >
+          <ChevronDown
+            className="w-3.5 h-3.5"
+            style={{ color: open ? 'var(--accent)' : 'var(--text-tertiary)' }}
+          />
+        </motion.div>
+      </button>
+
+      {/* Dropdown list */}
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute z-50 mt-2 min-w-full rounded-xl border overflow-hidden"
+            style={{
+              background: 'var(--bg-secondary)',
+              borderColor: 'var(--border-primary)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            {versions.map((v) => {
+              const isSelected = v.version === value;
+              return (
+                <li key={v.version}>
+                  <button
+                    type="button"
+                    onClick={() => { onChange(v.version); setOpen(false); }}
+                    className="w-full text-left font-mono text-sm px-4 py-2.5 transition-colors duration-150 flex items-center justify-between gap-4"
+                    style={{
+                      background: isSelected ? 'var(--accent-glow)' : 'transparent',
+                      color: isSelected ? 'var(--accent)' : 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--border-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                    }}
+                  >
+                    <span>{v.version}</span>
+                    {v.version === latestVersion && (
+                      <span
+                        className="font-mono text-xs px-1.5 py-0.5 rounded-md border"
+                        style={{
+                          color: 'var(--accent)',
+                          borderColor: 'var(--accent)',
+                          background: 'var(--accent-glow)',
+                        }}
+                      >
+                        latest
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function AssetRow({ asset, index }: { asset: ReleaseAsset; index: number }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <motion.button
       onClick={() => window.open(asset.download_url)}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -16 }}
+      whileHover={{ x: 4 }}
+      whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.3, delay: index * 0.07 }}
-      className="group w-full flex items-center justify-between rounded-xl border backdrop-blur-sm px-5 py-4 text-left transition-all duration-300"
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}
+      className="group relative w-full flex items-center justify-between rounded-xl border backdrop-blur-sm px-5 py-4 text-left overflow-hidden"
+      style={{
+        background: hovered ? 'var(--bg-card-hover)' : 'var(--bg-card)',
+        borderColor: hovered ? 'var(--border-primary)' : 'var(--border-subtle)',
+        transition: 'background 0.2s ease, border-color 0.2s ease',
+      }}
     >
-      <div>
-        <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+      {/* Left accent bar */}
+      <motion.div
+        className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
+        style={{ background: 'var(--accent)' }}
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ scaleY: hovered ? 1 : 0, opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+      />
+
+      {/* File info */}
+      <div className="pl-1">
+        <span
+          className="font-mono text-sm font-semibold transition-colors duration-200"
+          style={{ color: hovered ? 'var(--accent)' : 'var(--text-primary)' }}
+        >
           {asset.name}
         </span>
         <p className="font-mono text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
           {assetTypeLabel(asset.type)} • {formatBytes(asset.size)}
         </p>
       </div>
-      <Download
-        className="w-4 h-4 shrink-0 ml-4"
-        style={{ color: 'var(--text-muted)' }}
-      />
+
+      {/* Download icon */}
+      <motion.div
+        animate={{ y: hovered ? 2 : 0, opacity: hovered ? 1 : 0.5 }}
+        transition={{ duration: 0.2 }}
+        className="shrink-0 ml-4"
+      >
+        <Download
+          className="w-4 h-4"
+          style={{ color: hovered ? 'var(--accent)' : 'var(--text-muted)' }}
+        />
+      </motion.div>
     </motion.button>
   );
 }
@@ -76,34 +217,17 @@ export default function DownloadInstaller({ data }: Props) {
         >
           Version
         </span>
-        <div className="relative">
-          <select
-            value={selectedVer}
-            onChange={(e) => {
-              const ver = e.target.value;
-              setSelectedVer(ver);
-              const v = data.versions.find((v) => v.version === ver);
-              const platforms = v ? Object.keys(v.platforms) : [];
-              setSelectedOS(platforms.includes('Windows') ? 'Windows' : (platforms[0] ?? ''));
-            }}
-            className="appearance-none font-mono text-sm px-4 py-2 pr-8 rounded-lg border cursor-pointer focus:outline-none"
-            style={{
-              background: 'var(--bg-card)',
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            {data.versions.map((v) => (
-              <option key={v.version} value={v.version}>
-                {v.version}{v.version === data.latestVersion ? '  (latest)' : ''}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-            style={{ color: 'var(--text-tertiary)' }}
-          />
-        </div>
+        <VersionSelect
+          versions={data.versions}
+          latestVersion={data.latestVersion}
+          value={selectedVer}
+          onChange={(ver) => {
+            setSelectedVer(ver);
+            const v = data.versions.find((v) => v.version === ver);
+            const platforms = v ? Object.keys(v.platforms) : [];
+            setSelectedOS(platforms.includes('Windows') ? 'Windows' : (platforms[0] ?? ''));
+          }}
+        />
       </div>
 
       {/* OS selector cards */}
