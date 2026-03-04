@@ -3,16 +3,23 @@
 import { motion } from 'motion/react';
 import { Download, Terminal } from 'lucide-react';
 
+const GITHUB_REPO = 'Uncharted0110/NELA---Ninakkan-Ella-Local-Aagi';
+const RELEASE_VERSION = 'v0.1.0';
+const RELEASE_OS = 'Windows'
+const RELEASE_FILE = 'GenHat_0.1.0_x64-setup.exe';
+
+//https://github.com/Uncharted0110/NELA---Ninakkan-Ella-Local-Aagi/releases/download/v0.1.0-Windows/GenHat_0.1.0_x64-setup.exe
+const DOWNLOAD_URL = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_VERSION}-${RELEASE_OS}/${RELEASE_FILE}`;
 
 const handleDownload = () => {
-    window.open(`/api/download?fileId=1UehjyBsXYgfxTt-AaqElpUt7mYrzgfX9`);
-  };
+  window.open(DOWNLOAD_URL);
+};
 
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-6">
       <div className="max-w-5xl mx-auto w-full flex flex-col items-center text-center z-10">
-        
+
         {/* Dorky Terminal Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -67,7 +74,7 @@ export default function Hero() {
               Download for Windows
             </span>
           </button>
-          
+
           <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>
             v1.0.4-beta • 142MB .exe
           </span>
