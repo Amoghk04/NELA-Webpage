@@ -17,7 +17,7 @@ type OsIcon = React.ComponentType<{ className?: string; style?: React.CSSPropert
 
 const OS_META: Record<string, { icon: OsIcon; label: string; desc: string }> = {
   Windows: { icon: FaWindows, label: 'Windows', desc: '64-bit installer' },
-  Linux:   { icon: FaLinux,   label: 'Linux',   desc: 'Deb / AppImage' },
+  Linux:   { icon: FaLinux,   label: 'Linux',   desc: 'Deb' },
   macOS:   { icon: FaApple,   label: 'macOS',   desc: 'Universal binary' },
 };
 

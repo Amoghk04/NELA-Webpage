@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTheme } from './ThemeProvider';
 import { Sun, Moon } from 'lucide-react';
 
@@ -8,7 +9,23 @@ export default function NavBar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="fixed top-4 right-6 z-50">
+    <header className="fixed top-4 left-6 right-6 z-50 flex justify-between items-center">
+      {/* Logo */}
+      <Link href="/" className="backdrop-blur-md rounded-full p-2 border transition-all duration-200 hover:scale-105"
+        style={{
+          background: 'var(--bg-nav)',
+          borderColor: 'var(--border-primary)',
+        }}
+      >
+        <Image
+          src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+          alt="NELA"
+          width={32}
+          height={32}
+          className="transition-opacity duration-300"
+        />
+      </Link>
+
       <nav className="backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-4 border"
         style={{
           background: 'var(--bg-nav)',

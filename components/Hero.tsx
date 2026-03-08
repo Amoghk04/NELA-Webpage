@@ -3,6 +3,8 @@
 import { motion } from 'motion/react';
 import { Download, Terminal, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useTheme } from './ThemeProvider';
 import {
   fetchReleases,
   latestWindowsExe,
@@ -16,6 +18,7 @@ import {
 const releasesPreload = fetchReleases().catch(() => null);
 
 export default function Hero() {
+  const { theme } = useTheme();
   const [asset, setAsset] = useState<ReleaseAsset | null>(null);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,23 @@ export default function Hero() {
           <span className="font-mono text-xs uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
             Initializing local neural pathways...
           </span>
+        </motion.div>
+
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, type: 'spring', bounce: 0.3 }}
+          className="mb-8"
+        >
+          <Image
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+            alt="NELA Logo"
+            width={200}
+            height={200}
+            priority
+            className="transition-opacity duration-300"
+          />
         </motion.div>
 
         {/* Main Title */}
