@@ -64,8 +64,8 @@ export default function Hero() {
           <Image
             src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
             alt="NELA Logo"
-            width={200}
-            height={200}
+            width={250}
+            height={250}
             priority
             className="transition-opacity duration-300"
           />
