@@ -29,9 +29,10 @@ function safeSegments(segments: string[]) {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { path?: string[] } }
+  context: { params: Promise<{ path?: string[] }> }
 ): Promise<Response> {
-  const segments = safeSegments(params.path ?? []);
+  const { path: requestedPath } = await context.params;
+  const segments = safeSegments(requestedPath ?? []);
   if (segments.length === 0) {
     return new Response('Missing image path', { status: 400 });
   }
