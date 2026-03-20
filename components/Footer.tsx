@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Download, Github, Twitter } from 'lucide-react';
+import { Download, Github, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -61,11 +61,22 @@ export default function Footer() {
           <div className="font-space text-2xl font-bold tracking-tighter" style={{ color: 'var(--text-primary)' }}>NELA</div>
           
           <div className="flex gap-6" style={{ color: 'var(--text-tertiary)' }}>
-            <a href="#" className="hover:opacity-80 transition-opacity">
+            <a
+              href="https://github.com/uncharted0110/nela"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:opacity-80 transition-opacity"
+              aria-label="NELA GitHub"
+            >
               <Github className="w-6 h-6" />
             </a>
-            <a href="#" className="hover:opacity-80 transition-opacity">
-              <Twitter className="w-6 h-6" />
+            <a
+              href="mailto:nelalocal.official@gmail.com"
+              target="_blank"
+              className="hover:opacity-80 transition-opacity"
+              aria-label="Email NELA"
+            >
+              <Mail className="w-6 h-6" />
             </a>
           </div>
           
