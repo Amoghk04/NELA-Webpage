@@ -10,5 +10,5 @@ Download, list, and configure models locally. This is where you define quality v
 
 ## Architecture snapshot
 
-![Model management architecture](../images/what-is-it/architecture.png)
+![Model management architecture](/architecture.png)
 

@@ -10,5 +10,5 @@ Results are displayed with a consistent layout that keeps question, context, and
 
 ## Architecture snapshot
 
-![UI integration architecture](../images/what-is-it/architecture.png)
+![UI integration architecture](/architecture.png)
 

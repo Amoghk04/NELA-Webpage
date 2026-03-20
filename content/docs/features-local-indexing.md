@@ -10,5 +10,5 @@ NELA builds an index over your workspace and stores embeddings locally for fast 
 
 ## Architecture snapshot
 
-![Local indexing architecture](../images/what-is-it/architecture.png)
+![Local indexing architecture](/architecture.png)
 

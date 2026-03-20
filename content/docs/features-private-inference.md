@@ -10,5 +10,5 @@ Inference runs on your machine using the model you installed/configured, keeping
 
 ## Architecture snapshot
 
-![Private inference architecture](../images/what-is-it/architecture.png)
+![Private inference architecture](/architecture.png)
 
