@@ -11,5 +11,5 @@ Quick start concept: `index` your workspace, then query using your chosen model.
 
 ## Architecture preview
 
-![Architecture diagram](../images/what-is-it/architecture.png)
+![Architecture diagram](../../public/docs/images/architecture.png)
 
