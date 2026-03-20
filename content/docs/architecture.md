@@ -21,4 +21,3 @@ You can extend this page with:
 - a diagram image (`![...](./diagram.png)`)
 - commands used by the indexer and inference runner
 - details about caching, retrieval, and citations
-

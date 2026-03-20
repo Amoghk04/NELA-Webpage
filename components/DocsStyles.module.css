@@ -47,7 +47,7 @@
 }
 
 .docsContent a:hover {
-  text-decoration: none;
+  text-decoration: underline;
   color: var(--accent);
 }
 
@@ -69,6 +69,7 @@
   padding: 1rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .docsContent pre code {
@@ -97,6 +98,160 @@
 
 .docsContent details + details {
   margin-top: 0.75rem;
+}
+
+/* Table Styles */
+.docsContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.docsContent table thead {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.docsContent table thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-subtle);
+  font-size: 0.9rem;
+}
+
+.docsContent table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.2s ease;
+}
+
+.docsContent table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.docsContent table tbody td {
+  padding: 0.75rem 1rem;
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.docsContent table tbody td:last-child,
+.docsContent table thead th:last-child {
+  border-right: none;
+}
+
+/* Callout Styles */
+.docsContent .callout {
+  margin: 1rem 0;
+  border-left: 4px solid;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.docsContent .callout-note,
+.docsContent .callout-info {
+  border-color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.docsContent .callout-warning {
+  border-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.docsContent .callout-danger {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.docsContent .callout-tip {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.docsContent .callout h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.docsContent .callout p {
+  margin: 0.25rem 0;
+}
+
+/* Mermaid Diagram Styles */
+.docsContent .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+/* Strikethrough and Task Lists */
+.docsContent del {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.docsContent input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.docsContent li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: 0;
+}
+
+/* Code Copy Button */
+.docsContent .code-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.docsContent pre:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.docsContent .code-copy-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--accent);
+}
+
+/* Blockquote Styles */
+.docsContent blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: 1rem;
+  margin-left: 0;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Line Break */
+.docsContent hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 2rem 0;
 }
 
 .docsContent details summary {
