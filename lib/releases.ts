@@ -203,3 +203,39 @@ export function latestWindowsExe(data: ReleasesData): ReleaseAsset | null {
   }
   return null;
 }
+
+export type PlatformName = "Windows" | "Linux" | "macOS";
+
+export function detectClientPlatform(userAgent: string): PlatformName {
+  const ua = userAgent.toLowerCase();
+  if (ua.includes("mac") || ua.includes("darwin")) return "macOS";
+  if (ua.includes("linux") || ua.includes("x11")) return "Linux";
+  return "Windows";
+}
+
+function preferredTypesForPlatform(platform: PlatformName): AssetType[] {
+  if (platform === "Windows") return ["exe", "msi", "archive"];
+  if (platform === "Linux") return ["deb", "AppImage", "archive"];
+  return ["dmg", "archive"];
+}
+
+export function latestAssetForPlatform(
+  data: ReleasesData,
+  platform: PlatformName
+): { version: string; asset: ReleaseAsset } | null {
+  const preferred = preferredTypesForPlatform(platform);
+
+  for (const v of data.versions) {
+    const assets = v.platforms[platform] ?? [];
+    if (assets.length === 0) continue;
+
+    for (const type of preferred) {
+      const matched = assets.find((asset) => asset.type === type);
+      if (matched) return { version: v.version, asset: matched };
+    }
+
+    return { version: v.version, asset: assets[0] };
+  }
+
+  return null;
+}

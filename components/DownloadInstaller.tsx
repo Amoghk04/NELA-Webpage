@@ -135,7 +135,7 @@ function AssetRow({ asset, index }: { asset: ReleaseAsset; index: number }) {
 
   return (
     <motion.button
-      onClick={() => window.open(asset.download_url)}
+      onClick={() => window.location.assign(asset.download_url)}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       initial={{ opacity: 0, x: -16 }}

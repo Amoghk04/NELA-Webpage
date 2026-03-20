@@ -7,10 +7,13 @@ import Image from 'next/image';
 import { useTheme } from './ThemeProvider';
 import {
   fetchReleases,
-  latestWindowsExe,
+  detectClientPlatform,
+  latestAssetForPlatform,
+  type PlatformName,
   formatBytes,
   type ReleaseAsset,
   type ReleasesData,
+  assetTypeLabel,
 } from '@/lib/releases';
 
 // Start the fetch the instant this module is loaded — before React even mounts.
@@ -20,21 +23,34 @@ const releasesPreload = fetchReleases().catch(() => null);
 export default function Hero() {
   const { theme } = useTheme();
   const [asset, setAsset] = useState<ReleaseAsset | null>(null);
-  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformName>('Windows');
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     releasesPreload.then((data: ReleasesData | null) => {
       if (data) {
-        setAsset(latestWindowsExe(data));
-        setLatestVersion(data.latestVersion);
+        const platform = detectClientPlatform(window.navigator.userAgent);
+        setSelectedPlatform(platform);
+
+        const latestForPlatform = latestAssetForPlatform(data, platform);
+        if (latestForPlatform) {
+          setAsset(latestForPlatform.asset);
+          setSelectedVersion(latestForPlatform.version);
+        } else {
+          setAsset(null);
+          setSelectedVersion(null);
+        }
       }
     }).finally(() => setLoading(false));
   }, []);
 
   const handleDownload = () => {
-    if (asset) window.open(asset.download_url);
+    if (asset) window.location.assign(asset.download_url);
   };
+
+  const platformLabel = selectedPlatform === 'macOS' ? 'macOS' : selectedPlatform;
+  const fileLabel = asset ? assetTypeLabel(asset.type) : '';
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-6">
@@ -113,7 +129,7 @@ export default function Hero() {
               ) : (
                 <Download className="w-5 h-5" />
               )}
-              {loading ? 'Loading...' : 'Download for Windows'}
+              {loading ? 'Loading...' : `Download for ${platformLabel}`}
             </span>
           </button>
 
@@ -121,8 +137,8 @@ export default function Hero() {
             {loading
               ? 'Fetching latest release...'
               : asset
-              ? `${latestVersion} • ${formatBytes(asset.size)} • .exe`
-              : 'No Windows release found'}
+              ? `${selectedVersion} • ${formatBytes(asset.size)} • ${fileLabel}`
+              : `No ${platformLabel} release found`}
           </span>
         </motion.div>
 
