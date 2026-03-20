@@ -7,9 +7,9 @@ Quick start concept: `index` your workspace, then query using your chosen model.
 > Tip: you can include images in this markdown file, for example:
 >
 >
-> Place the image under `content/images/what-is-it/architecture.png`.
+> Place the image under `public/architecture.png` and reference it as `/architecture.png`.
 
 ## Architecture preview
 
-![Architecture diagram](../../public/architecture.png)
+![Architecture diagram](/architecture.png)
 
