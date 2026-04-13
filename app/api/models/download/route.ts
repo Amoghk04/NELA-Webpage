@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const webStream = new ReadableStream({
       start(controller) {
-        stream.on("data", (chunk: Buffer) => controller.enqueue(chunk));
+        stream.on("data", (chunk: string | Buffer) => controller.enqueue(typeof chunk === "string" ? Buffer.from(chunk) : chunk));
         stream.on("end", () => controller.close());
         stream.on("error", (err) => controller.error(err));
       },
