@@ -1,50 +1,54 @@
 # History
 
-Project evolution from earliest local-only prototypes to the current docs-driven developer experience.
+NELA evolved from a local inference prototype into a full desktop AI workspace. The timeline below summarizes major capability shifts represented in the current codebase.
 
 <div class="timeline">
   <div class="timeline-item">
     <div class="timeline-content">
-      <div class="timeline-version">v0.1.0 - Foundation</div>
-      <div class="timeline-date">Initial milestone</div>
+      <div class="timeline-version">Phase 1 - Local Foundation</div>
+      <div class="timeline-date">Core runtime milestone</div>
       <ul class="timeline-changelog">
-        <li>Built core local indexing pipeline.</li>
-        <li>Introduced private local inference architecture.</li>
-        <li>Established early app shell and navigation.</li>
-        <li>Improved indexing throughput and cache behavior.</li>
-        <li>Added clearer model selection and management flow.</li>
-        <li>Stabilized core command patterns for local workflows.</li>
+        <li>Established local-first inference using desktop runtime + on-device models.</li>
+        <li>Introduced model registry and task routing for chat-focused workflows.</li>
+        <li>Added workspace-oriented state so projects stay isolated.</li>
       </ul>
     </div>
   </div>
 
   <div class="timeline-item">
     <div class="timeline-content">
-      <div class="timeline-version">v0.3.0 - Performance & Model Ops</div>
-      <div class="timeline-date">Optimization milestone</div>
+      <div class="timeline-version">Phase 2 - Multimodal Expansion</div>
+      <div class="timeline-date">Capability milestone</div>
       <ul class="timeline-changelog">
-        <li>Improved indexing throughput and cache behavior.</li>
-        <li>Added clearer model selection and management flow.</li>
-        <li>Stabilized core command patterns for local workflows.</li>
+        <li>Added Vision mode with dedicated vision model + projector flow.</li>
+        <li>Integrated speech workflows with ASR transcription and TTS generation.</li>
+        <li>Introduced Podcast and Mindmap generation paths.</li>
       </ul>
     </div>
   </div>
 
   <div class="timeline-item">
     <div class="timeline-content">
-      <div class="timeline-version">v0.5.0 - Docs & Theming</div>
-      <div class="timeline-date">Documentation milestone</div>
+      <div class="timeline-version">Phase 3 - Retrieval + Advanced Routing</div>
+      <div class="timeline-date">Quality milestone</div>
       <ul class="timeline-changelog">
-        <li>Split docs into dedicated section pages.</li>
-        <li>Added markdown-based content authoring.</li>
-        <li>Unified light/dark visual styling and interaction polish.</li>
+        <li>Strengthened RAG with embedding, grading, and classifier-based routing support.</li>
+        <li>Added richer model management controls and runtime parameter tuning.</li>
+        <li>Implemented compatibility estimation to guide model selection by system capacity.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-content">
+      <div class="timeline-version">Phase 4 - Product Workflow Polish</div>
+      <div class="timeline-date">Current direction</div>
+      <ul class="timeline-changelog">
+        <li>Expanded onboarding with guided in-app tours and help content.</li>
+        <li>Improved workspace import/export flow via `.nela` project files.</li>
+        <li>Added benchmarking tools for startup, memory, and model runtime behavior.</li>
       </ul>
     </div>
   </div>
 </div>
-
-Add the next release by copying one `<div class="timeline-item">...</div>` block and updating:
-- `timeline-version`
-- `timeline-date`
-- changelog bullets
 

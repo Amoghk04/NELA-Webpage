@@ -167,13 +167,26 @@ const MermaidDiagram = ({ code }: { code: string }) => {
   useEffect(() => {
     const renderDiagram = async () => {
       try {
+        // Wait until web fonts are ready so Mermaid measures text with final metrics.
+        if (typeof document !== 'undefined' && 'fonts' in document) {
+          await (document as Document & { fonts: FontFaceSet }).fonts.ready;
+        }
+
         mermaid.initialize({
           startOnLoad: true,
           theme: window.matchMedia('(prefers-color-scheme: dark)').matches
             ? 'dark'
             : 'default',
           securityLevel: 'loose',
-          fontFamily: 'inherit',
+          // Use stable system fonts to avoid clipping caused by late custom-font swaps.
+          fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+          flowchart: {
+            htmlLabels: false,
+            useMaxWidth: true,
+          },
+          themeVariables: {
+            fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+          },
         });
         
         // Clear any previous content

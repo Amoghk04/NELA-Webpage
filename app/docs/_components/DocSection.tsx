@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { notFound } from 'next/navigation';
 import DocsMarkdownRenderer from '@/components/DocsMarkdownRenderer';
+import styles from '@/components/DocsStyles.module.css';
 
 type Props = {
   slug: string;
@@ -21,6 +22,10 @@ export default async function DocSection({ slug }: Props) {
 
   // Markdown renderer maps `../images/...` and `content/images/...` to
   // `/api/docs-image/...` so authors can type assets in a simple way.
-  return <DocsMarkdownRenderer markdown={markdown} assetBasePath={`/docs/${slug}`} />;
+  return (
+    <div className={styles.docsMarkdownFrame}>
+      <DocsMarkdownRenderer markdown={markdown} assetBasePath={`/docs/${slug}`} />
+    </div>
+  );
 }
 

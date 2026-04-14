@@ -23,9 +23,15 @@ export default function DocsSidebar() {
   const featuresOpen = isActive('/docs/features');
 
   return (
-    <aside className={`hidden md:block w-56 pr-6 sticky top-24 ${styles.docsSidebar}`}>
-      <nav className="bg-transparent">
-        <ul className="space-y-3 text-sm">
+    <aside className={`hidden md:block w-64 lg:w-72 ${styles.docsSidebar}`}>
+      <div className={`${styles.docsSidebarPanel} sticky top-24`}>
+        <div className={styles.docsSidebarMeta}>
+          <p className={styles.docsSidebarEyebrow}>NELA Docs</p>
+          <p className={styles.docsSidebarCaption}>Local-first guide for setup, models, and workflows</p>
+        </div>
+
+        <nav className="bg-transparent">
+          <ul className="space-y-2 text-sm">
           <li>
             <Link
               href="/docs/what-is-it"
@@ -138,8 +144,9 @@ export default function DocsSidebar() {
               FAQs
             </Link>
           </li>
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      </div>
     </aside>
   );
 }
