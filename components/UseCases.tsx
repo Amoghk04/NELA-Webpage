@@ -47,7 +47,7 @@ export default function UseCases() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="font-space text-5xl md:text-7xl font-bold tracking-tighter mb-5"
@@ -56,7 +56,7 @@ export default function UseCases() {
             What can NELA do for you?
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 1, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
@@ -68,13 +68,13 @@ export default function UseCases() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 26 }}
+          initial={{ opacity: 1, y: 26 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.7 }}
-          className="grid lg:grid-cols-[1fr_1.2fr] gap-6 rounded-[2rem] border p-6 md:p-8 mb-10"
+          className="grid lg:grid-cols-[1fr_1.2fr] gap-6 rounded-[2rem] border p-6 md:p-8 mb-10 backdrop-blur-xl"
           style={{
-            background: 'var(--bg-card)',
+            background: 'var(--bg-overlay)',
             borderColor: 'var(--border-primary)',
             boxShadow: '0 0 24px var(--accent-glow)',
           }}
@@ -143,9 +143,9 @@ export default function UseCases() {
                 });
               }}
               transition={{ duration: 0.6, delay: index * 0.12 }}
-              className="rounded-3xl border p-6 md:p-7 flex flex-col"
+              className="rounded-3xl border p-6 md:p-7 flex flex-col backdrop-blur-xl"
               style={{
-                background: 'var(--bg-card)',
+                background: 'var(--bg-overlay)',
                 borderColor: 'var(--border-primary)',
               }}
             >
