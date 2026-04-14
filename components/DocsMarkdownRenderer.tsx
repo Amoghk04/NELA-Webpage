@@ -9,6 +9,7 @@ import mermaid from 'mermaid';
 import { Copy, CheckCircle, AlertCircle, AlertTriangle, Info, ChevronDown } from 'lucide-react';
 import { trackClientEvent } from '@/lib/analytics-client';
 import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { useTheme } from './ThemeProvider';
 
 type Props = {
   markdown: string;
@@ -159,7 +160,7 @@ const Callout = ({
 };
 
 // Mermaid diagram component
-const MermaidDiagram = ({ code }: { code: string }) => {
+const MermaidDiagram = ({ code, theme }: { code: string; theme: 'dark' | 'light' }) => {
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string>('');
   const elementId = useId().replace(/:/g, '-');
@@ -174,9 +175,8 @@ const MermaidDiagram = ({ code }: { code: string }) => {
 
         mermaid.initialize({
           startOnLoad: true,
-          theme: window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'default',
+          // Keep Mermaid in sync with the app's theme toggle.
+          theme: theme === 'dark' ? 'dark' : 'default',
           securityLevel: 'loose',
           // Use stable system fonts to avoid clipping caused by late custom-font swaps.
           fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
@@ -207,7 +207,7 @@ const MermaidDiagram = ({ code }: { code: string }) => {
     if (code && code.trim()) {
       renderDiagram();
     }
-  }, [code, elementId]);
+  }, [code, elementId, theme]);
 
   if (error) {
     return (
@@ -296,6 +296,8 @@ const Details = ({ children, summary }: { children: React.ReactNode; summary: st
 };
 
 export default function DocsMarkdownRenderer({ markdown, assetBasePath = '/docs' }: Props) {
+  const { theme } = useTheme();
+
   // Enhanced markdown processing
   const processedMarkdown = useMemo(() => {
     let processed = markdown;
@@ -347,7 +349,7 @@ export default function DocsMarkdownRenderer({ markdown, assetBasePath = '/docs'
           const isMermaid = /(^|\s)language-mermaid(\s|$)/.test(codeClassName);
           
           if (isMermaid) {
-            return <MermaidDiagram code={codeContent.trim()} />;
+            return <MermaidDiagram code={codeContent.trim()} theme={theme} />;
           }
 
           return (
