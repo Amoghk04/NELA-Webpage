@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Download, ChevronDown } from 'lucide-react';
 import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
 import { useState, useRef, useEffect } from 'react';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { buildInstallerDownloadLink } from '@/lib/download-links';
 import {
   assetsFor,
   formatBytes,
@@ -130,12 +133,42 @@ function VersionSelect({ versions, latestVersion, value, onChange }: VersionSele
   );
 }
 
-function AssetRow({ asset, index }: { asset: ReleaseAsset; index: number }) {
+function AssetRow({
+  asset,
+  index,
+  selectedOS,
+  selectedVer,
+}: {
+  asset: ReleaseAsset;
+  index: number;
+  selectedOS: string;
+  selectedVer: string;
+}) {
   const [hovered, setHovered] = useState(false);
+
+  const handleInstallerDownload = () => {
+    trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+      source: 'download_installer',
+      platform: selectedOS,
+      version: selectedVer,
+      asset_name: asset.name,
+      asset_type: asset.type,
+      asset_size_bytes: asset.size,
+    });
+
+    const downloadUrl = buildInstallerDownloadLink({
+      version: selectedVer,
+      platform: selectedOS,
+      assetName: asset.name,
+      source: 'download_installer',
+    });
+
+    window.location.assign(downloadUrl);
+  };
 
   return (
     <motion.button
-      onClick={() => window.location.assign(asset.download_url)}
+      onClick={handleInstallerDownload}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       initial={{ opacity: 0, x: -16 }}
@@ -222,6 +255,13 @@ export default function DownloadInstaller({ data }: Props) {
           latestVersion={data.latestVersion}
           value={selectedVer}
           onChange={(ver) => {
+            trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+              source: 'download_installer',
+              feature: 'version_selector',
+              action: 'select',
+              version: ver,
+            });
+
             setSelectedVer(ver);
             const v = data.versions.find((v) => v.version === ver);
             const platforms = v ? Object.keys(v.platforms) : [];
@@ -242,7 +282,19 @@ export default function DownloadInstaller({ data }: Props) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.07 }}
-              onClick={() => available && setSelectedOS(os)}
+              onClick={() => {
+                if (!available) return;
+
+                trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                  source: 'download_installer',
+                  feature: 'platform_selector',
+                  action: 'select',
+                  platform: os,
+                  version: selectedVer,
+                });
+
+                setSelectedOS(os);
+              }}
               disabled={!available}
               aria-pressed={isSelected}
               className="rounded-2xl border backdrop-blur-sm p-6 flex flex-col items-center text-center transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -285,7 +337,13 @@ export default function DownloadInstaller({ data }: Props) {
             className="space-y-3"
           >
             {currentAssets.map((asset, i) => (
-              <AssetRow key={asset.name} asset={asset} index={i} />
+              <AssetRow
+                key={asset.name}
+                asset={asset}
+                index={i}
+                selectedOS={selectedOS}
+                selectedVer={selectedVer}
+              />
             ))}
           </motion.div>
         ) : (

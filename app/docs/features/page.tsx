@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import DocSection from '../_components/DocSection';
 import styles from '@/components/DocsStyles.module.css';
+import TrackedDocLink from '@/components/TrackedDocLink';
 
 const featurePages = [
   { title: 'Local Indexing', href: '/docs/features/local-indexing' },
@@ -16,10 +16,15 @@ export default function FeaturesPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         {featurePages.map((f) => (
-          <Link key={f.href} href={f.href} className={`${styles.docsCard} p-4`}>
+          <TrackedDocLink
+            key={f.href}
+            href={f.href}
+            source="docs_features_index"
+            className={`${styles.docsCard} p-4`}
+          >
             <h3 className="m-0">{f.title}</h3>
             <p className="m-0 mt-1 text-sm">Open section page</p>
-          </Link>
+          </TrackedDocLink>
         ))}
       </div>
     </section>

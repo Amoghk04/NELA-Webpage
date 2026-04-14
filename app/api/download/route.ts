@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { track } from '@vercel/analytics/server';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 export async function GET(req: NextRequest) {
   const fileId = req.nextUrl.searchParams.get("fileId");
@@ -52,6 +54,16 @@ export async function GET(req: NextRequest) {
     if (meta.data.size) headers.set("Content-Length", String(meta.data.size));
     // Allow CDN caching at the edge for an hour (adjust as needed)
     headers.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+
+    const sizeBytes = meta.data.size ? Number(meta.data.size) : undefined;
+    void track(ANALYTICS_EVENTS.DownloadServed, {
+      source: 'installer_api',
+      route: '/api/download',
+      file_id: fileId,
+      file_name: name,
+      mime_type: mimeType,
+      size_bytes: Number.isFinite(sizeBytes ?? NaN) ? sizeBytes : undefined,
+    }).catch(() => undefined);
 
     return new NextResponse(webStream, { headers });
   } catch (error) {

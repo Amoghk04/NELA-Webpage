@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { stat } from "fs/promises";
 import { createReadStream } from "fs";
 import path from "path";
+import { track } from '@vercel/analytics/server';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 export async function GET(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
@@ -43,6 +45,14 @@ export async function GET(req: NextRequest) {
     headers.set("Content-Disposition", `attachment; filename="${fileName}"`);
     headers.set("Content-Type", "application/octet-stream");
     headers.set("Content-Length", String(fileStat.size));
+
+    void track(ANALYTICS_EVENTS.DownloadServed, {
+      source: 'models_api',
+      route: '/api/models/download',
+      requested_path: file,
+      file_name: fileName,
+      size_bytes: fileStat.size,
+    }).catch(() => undefined);
 
     return new NextResponse(webStream, { headers });
   } catch {

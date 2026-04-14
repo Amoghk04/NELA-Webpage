@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Download, ChevronDown, Brain, Eye, Mic, Volume2, Binary, Router, Award } from 'lucide-react';
 import { useState } from 'react';
 import { formatBytes } from '@/lib/releases';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 interface ModelFile {
   name: string;
@@ -149,7 +151,18 @@ function CategoryCard({ category, index }: { category: ModelCategory; index: num
       {/* Header — clickable */}
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
+        onClick={() => {
+          setExpanded((e) => {
+            const next = !e;
+            trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+              source: 'download_models',
+              feature: 'category_toggle',
+              action: next ? 'expand' : 'collapse',
+              category: category.id,
+            });
+            return next;
+          });
+        }}
         className="w-full flex items-center justify-between rounded-2xl border backdrop-blur-sm px-6 py-5 text-left transition-all duration-200 cursor-pointer"
         style={{
           background: expanded ? 'var(--bg-card-hover)' : 'var(--bg-card)',
@@ -221,7 +234,13 @@ function CategoryCard({ category, index }: { category: ModelCategory; index: num
           >
             <div className="p-4 space-y-2">
               {category.files.map((file, i) => (
-                <FileRow key={file.path} file={file} index={i} />
+                <FileRow
+                  key={file.path}
+                  file={file}
+                  index={i}
+                  categoryId={category.id}
+                  categoryName={category.name}
+                />
               ))}
             </div>
           </motion.div>
@@ -244,13 +263,43 @@ function triggerMultiDownload(paths: string[]) {
   });
 }
 
-function FileRow({ file, index }: { file: ModelFile; index: number }) {
+function FileRow({
+  file,
+  index,
+  categoryId,
+  categoryName,
+}: {
+  file: ModelFile;
+  index: number;
+  categoryId: string;
+  categoryName: string;
+}) {
   const [hovered, setHovered] = useState(false);
 
   const handleDownload = () => {
     if (file.paths && file.paths.length > 1) {
+      trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+        source: 'download_models',
+        download_kind: 'bundle',
+        category: categoryId,
+        category_name: categoryName,
+        file_name: file.name,
+        file_count: file.paths.length,
+        total_bytes: file.size,
+      });
+
       triggerMultiDownload(file.paths);
     } else {
+      trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+        source: 'download_models',
+        download_kind: 'single',
+        category: categoryId,
+        category_name: categoryName,
+        file_name: file.name,
+        file_path: file.path,
+        total_bytes: file.size,
+      });
+
       window.location.assign(`/api/models/download?file=${encodeURIComponent(file.path)}`);
     }
   };

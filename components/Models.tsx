@@ -2,6 +2,9 @@
 
 import { motion } from 'motion/react';
 import { TbDownload, TbFileUpload, TbMessageChatbot, TbArrowBadgeRightFilled } from 'react-icons/tb';
+import { useRef } from 'react';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 const steps = [
   {
@@ -28,6 +31,8 @@ const steps = [
 ];
 
 export default function Models() {
+  const seenSteps = useRef(new Set<string>());
+
   return (
     <section className="relative py-32 px-6 z-10 backdrop-blur-3xl border-y-2"
       style={{ 
@@ -65,6 +70,17 @@ export default function Models() {
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                onViewportEnter={() => {
+                  if (seenSteps.current.has(item.step)) return;
+                  seenSteps.current.add(item.step);
+
+                  trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                    source: 'home_models_flow',
+                    feature: item.title,
+                    step: item.step,
+                    action: 'impression',
+                  });
+                }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="relative flex-1 p-8 rounded-[2.5rem] border overflow-hidden flex flex-col"
@@ -124,6 +140,17 @@ export default function Models() {
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                onViewportEnter={() => {
+                  if (seenSteps.current.has(`mobile-${item.step}`)) return;
+                  seenSteps.current.add(`mobile-${item.step}`);
+
+                  trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                    source: 'home_models_flow_mobile',
+                    feature: item.title,
+                    step: item.step,
+                    action: 'impression',
+                  });
+                }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="relative w-full p-8 rounded-[2.5rem] border overflow-hidden flex flex-col"

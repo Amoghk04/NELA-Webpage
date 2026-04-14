@@ -5,6 +5,9 @@ import { Download, Terminal, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useTheme } from './ThemeProvider';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { buildInstallerDownloadLink } from '@/lib/download-links';
 import {
   fetchReleases,
   detectClientPlatform,
@@ -46,7 +49,26 @@ export default function Hero() {
   }, []);
 
   const handleDownload = () => {
-    if (asset) window.location.assign(asset.download_url);
+    if (!asset) return;
+    if (!selectedVersion) return;
+
+    trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+      source: 'hero_primary',
+      platform: selectedPlatform,
+      version: selectedVersion,
+      asset_name: asset.name,
+      asset_type: asset.type,
+      asset_size_bytes: asset.size,
+    });
+
+    const downloadUrl = buildInstallerDownloadLink({
+      version: selectedVersion,
+      platform: selectedPlatform,
+      assetName: asset.name,
+      source: 'hero_primary',
+    });
+
+    window.location.assign(downloadUrl);
   };
 
   const platformLabel = selectedPlatform === 'macOS' ? 'macOS' : selectedPlatform;

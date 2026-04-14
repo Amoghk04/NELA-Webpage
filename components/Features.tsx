@@ -3,6 +3,9 @@
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import { TbShieldLock, TbBrain, TbWifiOff } from 'react-icons/tb';
+import { useRef } from 'react';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 const features = [
   {
@@ -29,6 +32,8 @@ const features = [
 ];
 
 export default function Features() {
+  const seenFeatures = useRef(new Set<string>());
+
   return (
     <section className="relative py-32 px-6 z-10">
       <div className="max-w-6xl mx-auto space-y-32">
@@ -37,6 +42,16 @@ export default function Features() {
             key={index}
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            onViewportEnter={() => {
+              if (seenFeatures.current.has(feature.title)) return;
+              seenFeatures.current.add(feature.title);
+
+              trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                source: 'home_features',
+                feature: feature.title,
+                action: 'impression',
+              });
+            }}
             viewport={{ once: true, margin: '-100px' }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className={`flex flex-col md:flex-row gap-12 items-center ${

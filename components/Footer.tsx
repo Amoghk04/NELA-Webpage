@@ -2,8 +2,23 @@
 
 import { motion } from 'motion/react';
 import { Download, Github, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 export default function Footer() {
+  const handleDownloadCtaClick = () => {
+    trackClientEvent(ANALYTICS_EVENTS.NavClick, {
+      source: 'footer',
+      destination: 'download',
+    });
+
+    trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+      source: 'footer_cta',
+      destination: '/download',
+    });
+  };
+
   return (
     <footer className="relative py-32 px-6 z-10 border-t"
       style={{ background: 'var(--bg-overlay-heavy)', borderColor: 'var(--border-subtle)' }}
@@ -38,7 +53,10 @@ export default function Footer() {
           transition={{ delay: 0.4, type: 'spring', bounce: 0.5 }}
           className="mb-32"
         >
-          <button className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 rounded-full font-bold text-xl overflow-hidden transition-transform hover:scale-105 active:scale-95"
+          <Link
+            href="/download"
+            onClick={handleDownloadCtaClick}
+            className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 rounded-full font-bold text-xl overflow-hidden transition-transform hover:scale-105 active:scale-95"
             style={{
               background: 'var(--accent)',
               color: 'var(--bg-primary)',
@@ -52,7 +70,7 @@ export default function Footer() {
               <Download className="w-6 h-6" />
               Download NELA
             </span>
-          </button>
+          </Link>
         </motion.div>
 
         <div className="w-full border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-6"
@@ -67,6 +85,13 @@ export default function Footer() {
               rel="noreferrer"
               className="hover:opacity-80 transition-opacity"
               aria-label="NELA GitHub"
+              onClick={() => {
+                trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                  source: 'footer',
+                  action: 'external_link_click',
+                  target: 'github',
+                });
+              }}
             >
               <Github className="w-6 h-6" />
             </a>
@@ -75,6 +100,13 @@ export default function Footer() {
               target="_blank"
               className="hover:opacity-80 transition-opacity"
               aria-label="Email NELA"
+              onClick={() => {
+                trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+                  source: 'footer',
+                  action: 'external_link_click',
+                  target: 'mailto',
+                });
+              }}
             >
               <Mail className="w-6 h-6" />
             </a>

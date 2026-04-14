@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useId } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 import { Copy, CheckCircle, AlertCircle, AlertTriangle, Info, ChevronDown } from 'lucide-react';
+import { trackClientEvent } from '@/lib/analytics-client';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 type Props = {
   markdown: string;
@@ -63,9 +65,17 @@ function CodeCopyButton({ text }: { text: string }) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text);
+      trackClientEvent(ANALYTICS_EVENTS.DocsInteraction, {
+        source: 'docs_markdown',
+        action: 'copy_code',
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
+      trackClientEvent(ANALYTICS_EVENTS.DocsInteraction, {
+        source: 'docs_markdown',
+        action: 'copy_code_failed',
+      });
       console.error('Failed to copy:', err);
     }
   };
@@ -152,7 +162,7 @@ const Callout = ({
 const MermaidDiagram = ({ code }: { code: string }) => {
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const elementId = useMemo(() => `mermaid-${Math.random().toString(36).substr(2, 9)}`, []);
+  const elementId = useId().replace(/:/g, '-');
 
   useEffect(() => {
     const renderDiagram = async () => {
@@ -234,7 +244,15 @@ const Details = ({ children, summary }: { children: React.ReactNode; summary: st
   return (
     <details
       open={open}
-      onClick={() => setOpen(!open)}
+      onToggle={(e) => {
+        const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
+        setOpen(nextOpen);
+        trackClientEvent(ANALYTICS_EVENTS.DocsInteraction, {
+          source: 'docs_markdown',
+          action: nextOpen ? 'details_open' : 'details_close',
+          summary,
+        });
+      }}
       className="my-4 cursor-pointer rounded-lg border p-4"
       style={{
         background: 'var(--bg-card)',
@@ -384,6 +402,13 @@ export default function DocsMarkdownRenderer({ markdown, assetBasePath = '/docs'
               href={normalized}
               target="_blank"
               rel="noreferrer"
+              onClick={() => {
+                trackClientEvent(ANALYTICS_EVENTS.DocsInteraction, {
+                  source: 'docs_markdown',
+                  action: 'image_open',
+                  href: normalized,
+                });
+              }}
               className="block w-full my-4 rounded-xl border p-3 transition-all hover:opacity-90"
               style={{ background: '#ffffff', borderColor: 'var(--border-subtle)' }}
             >
@@ -392,6 +417,28 @@ export default function DocsMarkdownRenderer({ markdown, assetBasePath = '/docs'
                 alt={alt}
                 className="max-w-full h-auto mx-auto rounded-md"
               />
+            </a>
+          );
+        },
+        a({ href = '', children, ...props }: any) {
+          const normalizedHref = typeof href === 'string' ? href : '';
+          const isExternal = /^https?:\/\//.test(normalizedHref) || normalizedHref.startsWith('mailto:');
+
+          return (
+            <a
+              href={normalizedHref}
+              {...props}
+              onClick={(e) => {
+                if (typeof props.onClick === 'function') props.onClick(e);
+                trackClientEvent(ANALYTICS_EVENTS.DocsInteraction, {
+                  source: 'docs_markdown',
+                  action: 'link_click',
+                  href: normalizedHref,
+                  link_type: isExternal ? 'external' : 'internal',
+                });
+              }}
+            >
+              {children}
             </a>
           );
         },
