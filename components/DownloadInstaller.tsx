@@ -244,8 +244,8 @@ export default function DownloadInstaller({ data }: Props) {
     ? currentAssets.filter((asset) => asset.type !== 'dmg')
     : currentAssets;
   const macInstallCommand = selectedVer
-    ? `curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | sh -s -- ${selectedVer}`
-    : 'curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | sh';
+    ? `curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | bash -s -- ${selectedVer}`
+    : 'curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | bash';
 
   const handleCopyMacInstallCommand = async () => {
     try {
