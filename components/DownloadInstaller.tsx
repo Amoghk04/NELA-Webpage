@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Download, ChevronDown } from 'lucide-react';
+import { Download, ChevronDown, Copy, Check, Terminal } from 'lucide-react';
 import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
 import { useState, useRef, useEffect } from 'react';
 import { trackClientEvent } from '@/lib/analytics-client';
@@ -234,10 +234,41 @@ export default function DownloadInstaller({ data }: Props) {
 
   const [selectedOS, setSelectedOS]   = useState(initialOS);
   const [selectedVer, setSelectedVer] = useState(initialVersion);
+  const [copiedMacCommand, setCopiedMacCommand] = useState(false);
 
   const selectedVersionData = data.versions.find((v) => v.version === selectedVer);
   const availablePlatforms  = selectedVersionData ? Object.keys(selectedVersionData.platforms) : [];
   const currentAssets: ReleaseAsset[] = assetsFor(data, selectedVer, selectedOS);
+  const isMacSelected = selectedOS === 'macOS';
+  const visibleAssets: ReleaseAsset[] = isMacSelected
+    ? currentAssets.filter((asset) => asset.type !== 'dmg')
+    : currentAssets;
+  const macInstallCommand = selectedVer
+    ? `curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | sh -s -- ${selectedVer}`
+    : 'curl -fsSL https://nela-webpage.vercel.app/mac-install.sh | sh';
+
+  const handleCopyMacInstallCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(macInstallCommand);
+      setCopiedMacCommand(true);
+
+      trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+        source: 'download_installer',
+        feature: 'mac_install_command',
+        action: 'copy',
+        version: selectedVer,
+      });
+
+      window.setTimeout(() => setCopiedMacCommand(false), 1800);
+    } catch {
+      trackClientEvent(ANALYTICS_EVENTS.FeatureInteraction, {
+        source: 'download_installer',
+        feature: 'mac_install_command',
+        action: 'copy_failed',
+        version: selectedVer,
+      });
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -262,6 +293,7 @@ export default function DownloadInstaller({ data }: Props) {
               version: ver,
             });
 
+            setCopiedMacCommand(false);
             setSelectedVer(ver);
             const v = data.versions.find((v) => v.version === ver);
             const platforms = v ? Object.keys(v.platforms) : [];
@@ -293,6 +325,7 @@ export default function DownloadInstaller({ data }: Props) {
                   version: selectedVer,
                 });
 
+                setCopiedMacCommand(false);
                 setSelectedOS(os);
               }}
               disabled={!available}
@@ -326,9 +359,60 @@ export default function DownloadInstaller({ data }: Props) {
         })}
       </div>
 
+      {/* macOS terminal install command */}
+      {isMacSelected && (
+        <div
+          className="rounded-xl border overflow-hidden"
+          style={{
+            background: 'var(--bg-card)',
+            borderColor: 'var(--border-primary)',
+          }}
+        >
+          <div
+            className="flex items-center justify-between gap-3 px-4 py-2 border-b"
+            style={{
+              borderColor: 'var(--border-subtle)',
+              background: 'var(--bg-card-hover)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Terminal className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+              <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Terminal
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyMacInstallCommand}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border font-mono text-xs transition-colors duration-150"
+              style={{
+                color: copiedMacCommand ? 'var(--accent)' : 'var(--text-secondary)',
+                borderColor: copiedMacCommand ? 'var(--accent)' : 'var(--border-primary)',
+                background: copiedMacCommand ? 'var(--accent-glow)' : 'transparent',
+              }}
+            >
+              {copiedMacCommand ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedMacCommand ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+
+          <div
+            className="px-4 py-4 font-mono text-xs sm:text-sm break-all leading-relaxed"
+            style={{
+              background: 'rgba(0, 0, 0, 0.45)',
+              color: '#d1f5d3',
+            }}
+          >
+            <span style={{ color: '#87f9a6' }}>$ </span>
+            {macInstallCommand}
+          </div>
+        </div>
+      )}
+
       {/* File list */}
       <AnimatePresence mode="wait">
-        {currentAssets.length > 0 ? (
+        {visibleAssets.length > 0 ? (
           <motion.div
             key={`${selectedOS}-${selectedVer}`}
             initial={{ opacity: 0 }}
@@ -336,7 +420,7 @@ export default function DownloadInstaller({ data }: Props) {
             exit={{ opacity: 0 }}
             className="space-y-3"
           >
-            {currentAssets.map((asset, i) => (
+            {visibleAssets.map((asset, i) => (
               <AssetRow
                 key={asset.name}
                 asset={asset}
@@ -347,16 +431,18 @@ export default function DownloadInstaller({ data }: Props) {
             ))}
           </motion.div>
         ) : (
-          <motion.p
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="font-mono text-sm text-center py-6"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            No installer files found for {selectedOS} {selectedVer}.
-          </motion.p>
+          !isMacSelected && (
+            <motion.p
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="font-mono text-sm text-center py-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              No installer files found for {selectedOS} {selectedVer}.
+            </motion.p>
+          )
         )}
       </AnimatePresence>
 

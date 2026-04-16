@@ -54,7 +54,7 @@ export async function fetchReleases(): Promise<ReleasesData> {
 // instead of going out to GitHub every time.
 // ---------------------------------------------------------------------------
 
-const GITHUB_REPO = "Uncharted0110/NELA---Ninakkan-Ella-Local-Aagi";
+const GITHUB_REPO = "nela-local/nela";
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases`;
 
 function getAssetType(name: string): AssetType {

@@ -1,4 +1,6 @@
-set -eu
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 red="$( (/usr/bin/tput bold || :; /usr/bin/tput setaf 1 || :) 2>&-)"
 plain="$( (/usr/bin/tput sgr0 || :) 2>&-)"
@@ -10,15 +12,30 @@ warning() { echo "${red}WARNING:${plain} $*"; }
 # -------------------------------
 # Version handling
 # -------------------------------
-VERSION="${1:-${NELA_VERSION:-latest}}"
+RAW_VERSION="${1:-${NELA_VERSION:-latest}}"
 
-status "Requested version: $VERSION"
+if [ "$RAW_VERSION" = "latest" ]; then
+    VERSION="latest"
+else
+    # Accept both "0.2.0" and "v0.2.0" from callers.
+    VERSION="${RAW_VERSION#v}"
+fi
+
+status "Requested version: $RAW_VERSION"
 
 # -------------------------------
 # Temp setup
 # -------------------------------
 TEMP_DIR=$(mktemp -d)
-cleanup() { rm -rf "$TEMP_DIR"; }
+MOUNT_POINT=''
+
+cleanup() {
+    if [ -n "$MOUNT_POINT" ] && mount | grep -q "on $MOUNT_POINT "; then
+        hdiutil detach "$MOUNT_POINT" -quiet || true
+    fi
+    rm -rf "$TEMP_DIR"
+}
+
 trap cleanup EXIT
 
 # -------------------------------
@@ -64,17 +81,21 @@ if [ "$OS" = "Darwin" ]; then
     # -------------------------------
     # Resolve download URL
     # -------------------------------
+    BASE_URL="${NELA_BASE_URL:-https://nela-webpage.vercel.app}"
+    BASE_URL="${BASE_URL%/}"
+
     if [ "$VERSION" = "latest" ]; then
         status "Resolving latest version..."
-        DOWNLOAD_URL="https://nela-webpage.vercel.app/api/latest/macOS/${ARCH}"
+        DOWNLOAD_URL="${BASE_URL}/api/latest/macOS/${ARCH}"
     else
-        DOWNLOAD_URL="https://github.com/nela-local/nela/releases/download/v${VERSION}-macOS/NELA_${VERSION}_${ARCH}.dmg"
+        RELEASE_REPO="${NELA_RELEASE_REPO:-nela-local/nela}"
+        DOWNLOAD_URL="https://github.com/${RELEASE_REPO}/releases/download/v${VERSION}-macOS/NELA_${VERSION}_${ARCH}.dmg"
     fi
 
     status "Download URL: $DOWNLOAD_URL"
 
     DMG_PATH="$TEMP_DIR/NELA.dmg"
-    MOUNT_POINT="/Volumes/NELA"
+    MOUNT_POINT="$TEMP_DIR/NELA.mount"
 
     # -------------------------------
     # Stop running instance
@@ -90,7 +111,7 @@ if [ "$OS" = "Darwin" ]; then
     # -------------------------------
     if [ -d "/Applications/NELA.app" ]; then
         status "Removing existing NELA installation..."
-        rm -rf "/Applications/NELA.app"
+        rm -rf "/Applications/NELA.app" 2>/dev/null || sudo rm -rf "/Applications/NELA.app"
     fi
 
     # -------------------------------
@@ -104,6 +125,7 @@ if [ "$OS" = "Darwin" ]; then
     # Mount DMG
     # -------------------------------
     status "Mounting DMG..."
+    mkdir -p "$MOUNT_POINT"
     hdiutil attach "$DMG_PATH" -mountpoint "$MOUNT_POINT" -nobrowse -quiet
 
     if [ ! -d "$MOUNT_POINT/NELA.app" ]; then
@@ -114,7 +136,8 @@ if [ "$OS" = "Darwin" ]; then
     # Install
     # -------------------------------
     status "Installing NELA to /Applications..."
-    cp -R "$MOUNT_POINT/NELA.app" "/Applications/"
+    cp -R "$MOUNT_POINT/NELA.app" "/Applications/" 2>/dev/null || \
+        sudo cp -R "$MOUNT_POINT/NELA.app" "/Applications/"
 
     # -------------------------------
     # Unmount

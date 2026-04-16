@@ -80,7 +80,7 @@ export default function Footer() {
           
           <div className="flex gap-6" style={{ color: 'var(--text-tertiary)' }}>
             <a
-              href="https://github.com/uncharted0110/nela"
+              href="https://github.com/nela-local/nela"
               target="_blank"
               rel="noreferrer"
               className="hover:opacity-80 transition-opacity"
