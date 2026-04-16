@@ -13,6 +13,14 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 export const metadata: Metadata = {
   title: 'NELA',
   description: 'Neural Engine for Local Analysis',
+  icons: {
+    icon: [
+      { url: '/logo-light.png', media: '(prefers-color-scheme: light)' },
+      { url: '/logo-dark.png', media: '(prefers-color-scheme: dark)' },
+    ],
+    shortcut: '/logo-dark.png',
+    apple: '/logo-light.png',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
