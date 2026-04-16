@@ -61,7 +61,13 @@ ARCH="$(uname -m)"
 
 case "$ARCH" in
     x86_64) ARCH="amd64" ;;
-    aarch64|arm64) ARCH="arm64" ;;
+    aarch64|arm64) 
+        if [ "$OS" = "Darwin" ]; then
+            ARCH="aarch64"
+        else
+            ARCH="arm64"
+        fi
+        ;;
     *) error "Unsupported architecture: $ARCH" ;;
 esac
 
@@ -81,15 +87,16 @@ if [ "$OS" = "Darwin" ]; then
     # -------------------------------
     # Resolve download URL
     # -------------------------------
-    BASE_URL="${NELA_BASE_URL:-https://nela-webpage.vercel.app}"
+    BASE_URL="${NELA_BASE_URL:-__NELA_BASE_URL__}"
     BASE_URL="${BASE_URL%/}"
+    status "Using API base: $BASE_URL"
 
     if [ "$VERSION" = "latest" ]; then
         status "Resolving latest version..."
         DOWNLOAD_URL="${BASE_URL}/api/latest/macOS/${ARCH}"
     else
-        RELEASE_REPO="${NELA_RELEASE_REPO:-nela-local/nela}"
-        DOWNLOAD_URL="https://github.com/${RELEASE_REPO}/releases/download/v${VERSION}-macOS/NELA_${VERSION}_${ARCH}.dmg"
+        status "Resolving version $RAW_VERSION..."
+        DOWNLOAD_URL="${BASE_URL}/api/version/${RAW_VERSION}/macOS/${ARCH}"
     fi
 
     status "Download URL: $DOWNLOAD_URL"
@@ -149,8 +156,10 @@ if [ "$OS" = "Darwin" ]; then
     # CLI setup
     # -------------------------------
     BIN_PATH="/Applications/NELA.app/Contents/MacOS/NELA"
+    HAS_CLI=0
 
     if [ -f "$BIN_PATH" ]; then
+        HAS_CLI=1
         if [ ! -L "/usr/local/bin/nela" ] || [ "$(readlink "/usr/local/bin/nela")" != "$BIN_PATH" ]; then
             status "Adding 'nela' command to PATH (may require password)..."
             mkdir -p "/usr/local/bin" 2>/dev/null || sudo mkdir -p "/usr/local/bin"
@@ -164,12 +173,25 @@ if [ "$OS" = "Darwin" ]; then
     # -------------------------------
     # Auto start
     # -------------------------------
+    INSTALLED_VERSION=""
+    if [ -f "/Applications/NELA.app/Contents/Info.plist" ]; then
+        INSTALLED_VERSION=$(defaults read "/Applications/NELA.app/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)
+    fi
+
+    if [ -n "$INSTALLED_VERSION" ]; then
+        status "Installed app version: $INSTALLED_VERSION"
+    fi
+
     if [ -z "${NELA_NO_START:-}" ]; then
         status "Starting NELA..."
         open -a NELA
     fi
 
-    status "Install complete. You can now run 'nela'."
+    if [ "$HAS_CLI" -eq 1 ]; then
+        status "Install complete. You can now run 'nela'."
+    else
+        status "Install complete. Launch NELA from Applications."
+    fi
     exit 0
 fi
 

@@ -143,7 +143,7 @@ export async function getReleasesServerSide(): Promise<ReleasesData> {
   // (the function itself should never be called client-side).
   const { unstable_cache } = await import("next/cache");
   const cached = unstable_cache(_fetchReleasesFromGitHub, ["nela-releases"], {
-    revalidate: 600, // 10 minutes
+    revalidate: 60, // 1 minute
     tags: ["releases"],
   });
   return cached();
