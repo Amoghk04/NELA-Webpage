@@ -1,0 +1,153 @@
+set -eu
+
+red="$( (/usr/bin/tput bold || :; /usr/bin/tput setaf 1 || :) 2>&-)"
+plain="$( (/usr/bin/tput sgr0 || :) 2>&-)"
+
+status() { echo ">>> $*" >&2; }
+error() { echo "${red}ERROR:${plain} $*"; exit 1; }
+warning() { echo "${red}WARNING:${plain} $*"; }
+
+# -------------------------------
+# Version handling
+# -------------------------------
+VERSION="${1:-${NELA_VERSION:-latest}}"
+
+status "Requested version: $VERSION"
+
+# -------------------------------
+# Temp setup
+# -------------------------------
+TEMP_DIR=$(mktemp -d)
+cleanup() { rm -rf "$TEMP_DIR"; }
+trap cleanup EXIT
+
+# -------------------------------
+# Helpers
+# -------------------------------
+available() { command -v "$1" >/dev/null; }
+
+require() {
+    local MISSING=''
+    for TOOL in "$@"; do
+        if ! available "$TOOL"; then
+            MISSING="$MISSING $TOOL"
+        fi
+    done
+    echo "$MISSING"
+}
+
+# -------------------------------
+# OS / ARCH detection
+# -------------------------------
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+
+case "$ARCH" in
+    x86_64) ARCH="amd64" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+    *) error "Unsupported architecture: $ARCH" ;;
+esac
+
+# -------------------------------
+# macOS install
+# -------------------------------
+if [ "$OS" = "Darwin" ]; then
+    NEEDS=$(require curl hdiutil)
+    if [ -n "$NEEDS" ]; then
+        status "ERROR: Missing required tools:"
+        for NEED in $NEEDS; do
+            echo "  - $NEED"
+        done
+        exit 1
+    fi
+
+    # -------------------------------
+    # Resolve download URL
+    # -------------------------------
+    if [ "$VERSION" = "latest" ]; then
+        status "Resolving latest version..."
+        DOWNLOAD_URL="https://nela-webpage.vercel.app/api/latest/macOS/${ARCH}"
+    else
+        DOWNLOAD_URL="https://github.com/nela-local/nela/releases/download/v${VERSION}-macOS/NELA_${VERSION}_${ARCH}.dmg"
+    fi
+
+    status "Download URL: $DOWNLOAD_URL"
+
+    DMG_PATH="$TEMP_DIR/NELA.dmg"
+    MOUNT_POINT="/Volumes/NELA"
+
+    # -------------------------------
+    # Stop running instance
+    # -------------------------------
+    if pgrep -x NELA >/dev/null 2>&1; then
+        status "Stopping running NELA instance..."
+        pkill -x NELA 2>/dev/null || true
+        sleep 2
+    fi
+
+    # -------------------------------
+    # Remove old install
+    # -------------------------------
+    if [ -d "/Applications/NELA.app" ]; then
+        status "Removing existing NELA installation..."
+        rm -rf "/Applications/NELA.app"
+    fi
+
+    # -------------------------------
+    # Download
+    # -------------------------------
+    status "Downloading NELA..."
+    curl --fail --show-error --location --progress-bar \
+        -o "$DMG_PATH" "$DOWNLOAD_URL"
+
+    # -------------------------------
+    # Mount DMG
+    # -------------------------------
+    status "Mounting DMG..."
+    hdiutil attach "$DMG_PATH" -mountpoint "$MOUNT_POINT" -nobrowse -quiet
+
+    if [ ! -d "$MOUNT_POINT/NELA.app" ]; then
+        error "NELA.app not found inside DMG. Check DMG contents."
+    fi
+
+    # -------------------------------
+    # Install
+    # -------------------------------
+    status "Installing NELA to /Applications..."
+    cp -R "$MOUNT_POINT/NELA.app" "/Applications/"
+
+    # -------------------------------
+    # Unmount
+    # -------------------------------
+    status "Unmounting DMG..."
+    hdiutil detach "$MOUNT_POINT" -quiet
+
+    # -------------------------------
+    # CLI setup
+    # -------------------------------
+    BIN_PATH="/Applications/NELA.app/Contents/MacOS/NELA"
+
+    if [ -f "$BIN_PATH" ]; then
+        if [ ! -L "/usr/local/bin/nela" ] || [ "$(readlink "/usr/local/bin/nela")" != "$BIN_PATH" ]; then
+            status "Adding 'nela' command to PATH (may require password)..."
+            mkdir -p "/usr/local/bin" 2>/dev/null || sudo mkdir -p "/usr/local/bin"
+            ln -sf "$BIN_PATH" "/usr/local/bin/nela" 2>/dev/null || \
+                sudo ln -sf "$BIN_PATH" "/usr/local/bin/nela"
+        fi
+    else
+        warning "CLI binary not found at expected path: $BIN_PATH"
+    fi
+
+    # -------------------------------
+    # Auto start
+    # -------------------------------
+    if [ -z "${NELA_NO_START:-}" ]; then
+        status "Starting NELA..."
+        open -a NELA
+    fi
+
+    status "Install complete. You can now run 'nela'."
+    exit 0
+fi
+
+error "Unsupported OS: $OS"
