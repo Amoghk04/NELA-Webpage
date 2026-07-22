@@ -5,3 +5,7 @@ coverage/
 *.log
 .env*
 !.env.example
+dist/
+apps/api/dist/
+packages/shared/dist/
+NELA-Webpage/package-lock.json

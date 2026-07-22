@@ -67,6 +67,22 @@ export default function NavBar() {
         >
           Docs
         </Link>
+        <Link href="/pricing" className="text-base font-medium px-4 py-1 transition-colors duration-200"
+          onClick={() => handleNavClick('pricing')}
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+        >
+          Pricing
+        </Link>
+        <Link href="/login" className="text-base font-medium px-4 py-1 transition-colors duration-200"
+          onClick={() => handleNavClick('login')}
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+        >
+          Account
+        </Link>
         <Link href="/download" className="text-base font-medium px-4 py-1 rounded-full shadow-sm hover:opacity-90 transition-opacity duration-200"
           onClick={() => {
             handleNavClick('download');

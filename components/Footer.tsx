@@ -78,7 +78,13 @@ export default function Footer() {
         >
           <div className="font-space text-2xl font-bold tracking-tighter" style={{ color: 'var(--text-primary)' }}>NELA</div>
           
-          <div className="flex gap-6" style={{ color: 'var(--text-tertiary)' }}>
+          <div className="flex gap-6 items-center" style={{ color: 'var(--text-tertiary)' }}>
+            <Link href="/privacy" className="text-sm hover:opacity-80 transition-opacity">
+              Privacy
+            </Link>
+            <Link href="/terms" className="text-sm hover:opacity-80 transition-opacity">
+              Terms
+            </Link>
             <a
               href="https://github.com/nela-local/nela"
               target="_blank"
