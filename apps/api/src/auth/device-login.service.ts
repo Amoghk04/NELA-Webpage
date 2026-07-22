@@ -19,8 +19,19 @@ function hashDeviceCode(deviceCode: string): string {
   return hashWithPepper(deviceCode, env.REFRESH_TOKEN_PEPPER);
 }
 
+/** Normalize user-facing codes like "ABCD-EFGH" / "abcd efgh" → "ABCDEFGH". */
+export function normalizeUserCode(userCode: string): string {
+  return userCode.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+}
+
 function hashUserCode(userCode: string): string {
-  return hashWithPepper(userCode.toUpperCase(), env.REFRESH_TOKEN_PEPPER);
+  return hashWithPepper(normalizeUserCode(userCode), env.REFRESH_TOKEN_PEPPER);
+}
+
+function formatUserCodeDisplay(userCode: string): string {
+  const normalized = normalizeUserCode(userCode);
+  if (normalized.length !== 8) return normalized;
+  return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
 }
 
 export async function startDeviceLogin(input: {
@@ -28,6 +39,7 @@ export async function startDeviceLogin(input: {
 }): Promise<DeviceStartResponse> {
   const deviceCode = generateOpaqueToken(32);
   const userCode = generateUserCode();
+  const userCodeDisplay = formatUserCodeDisplay(userCode);
   const expiresIn = env.DEVICE_LOGIN_TTL_SECONDS;
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
@@ -35,14 +47,14 @@ export async function startDeviceLogin(input: {
     data: {
       deviceCodeHash: hashDeviceCode(deviceCode),
       userCodeHash: hashUserCode(userCode),
-      userCodeDisplay: userCode,
+      userCodeDisplay,
       deviceName: input.deviceName ?? null,
       status: "pending",
       expiresAt,
     },
   });
 
-  const verificationUrl = `${env.PUBLIC_WEB_URL}/login?deviceCode=${encodeURIComponent(deviceCode)}`;
+  const verificationUrl = `${env.PUBLIC_WEB_URL}/account/link-device`;
 
   await writeAuditLog({
     action: "device_login.start",
@@ -51,7 +63,7 @@ export async function startDeviceLogin(input: {
 
   return {
     deviceCode,
-    userCode,
+    userCode: userCodeDisplay,
     verificationUrl,
     expiresIn,
     interval: env.DEVICE_POLL_INTERVAL_SECONDS,
@@ -112,6 +124,78 @@ export async function approveDeviceLogin(input: {
   });
 }
 
+/**
+ * Approve a pending desktop device login using the 8-character user code.
+ * Requires an already-authenticated browser session (caller passes userId).
+ */
+export async function approveDeviceLoginByUserCode(input: {
+  userCode: string;
+  userId: string;
+}): Promise<{ ok: true; deviceName: string | null }> {
+  const normalized = normalizeUserCode(input.userCode);
+  if (normalized.length !== 8) {
+    throw new ApiError(
+      ErrorCodes.VALIDATION_ERROR,
+      "Enter the 8-character code shown in the desktop app",
+      400,
+    );
+  }
+
+  const session = await prisma.deviceLoginSession.findUnique({
+    where: { userCodeHash: hashUserCode(normalized) },
+  });
+
+  if (!session) {
+    throw new ApiError(
+      ErrorCodes.DEVICE_CODE_INVALID,
+      "Invalid device code. Check the code in NELA Desktop and try again.",
+      404,
+    );
+  }
+
+  if (session.expiresAt.getTime() < Date.now()) {
+    if (session.status === "pending") {
+      await prisma.deviceLoginSession.update({
+        where: { id: session.id },
+        data: { status: "expired" },
+      });
+    }
+    throw new ApiError(
+      ErrorCodes.DEVICE_CODE_EXPIRED,
+      "This device code has expired. Start a new sign-in from the desktop app.",
+      410,
+    );
+  }
+
+  if (session.status !== "pending") {
+    throw new ApiError(
+      ErrorCodes.DEVICE_CODE_INVALID,
+      `This device code is already ${session.status}`,
+      400,
+    );
+  }
+
+  await prisma.deviceLoginSession.update({
+    where: { id: session.id },
+    data: {
+      status: "approved",
+      approvedUserId: input.userId,
+      approvedAt: new Date(),
+    },
+  });
+
+  await writeAuditLog({
+    userId: input.userId,
+    action: "device_login.approved_by_user_code",
+    metadata: {
+      sessionId: session.id,
+      deviceName: session.deviceName,
+    },
+  });
+
+  return { ok: true, deviceName: session.deviceName };
+}
+
 export async function pollDeviceLogin(
   deviceCode: string,
 ): Promise<DevicePollResponse> {
@@ -154,8 +238,15 @@ export async function pollDeviceLogin(
     );
   }
 
-  // One-time consumption: mark as consumed by flipping to denied after issue,
-  // or delete. We expire the session after token issuance.
+  // Atomically claim the approved session so concurrent polls can't double-issue.
+  const claimed = await prisma.deviceLoginSession.updateMany({
+    where: { id: session.id, status: "approved" },
+    data: { status: "expired" },
+  });
+  if (claimed.count !== 1) {
+    return { status: "expired" };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.approvedUserId },
   });
@@ -174,11 +265,6 @@ export async function pollDeviceLogin(
     email: user.email,
   });
 
-  await prisma.deviceLoginSession.update({
-    where: { id: session.id },
-    data: { status: "expired" },
-  });
-
   await writeAuditLog({
     userId: user.id,
     action: "device_login.polled_approved",
@@ -191,5 +277,24 @@ export async function pollDeviceLogin(
     refreshToken: tokens.refreshToken,
     expiresIn: tokens.expiresIn,
     profile: tokens.profile,
+  };
+}
+
+/** Issue tokens for an already-approved device session (used by web OAuth callback). */
+export async function issueTokensForApprovedDevice(
+  deviceCode: string,
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  profile: import("@nela/shared").UserProfileDto;
+} | null> {
+  const result = await pollDeviceLogin(deviceCode);
+  if (result.status !== "approved") return null;
+  return {
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
+    expiresIn: result.expiresIn,
+    profile: result.profile,
   };
 }

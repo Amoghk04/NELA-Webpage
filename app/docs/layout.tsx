@@ -15,7 +15,7 @@ const mobileQuickLinks = [
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
     <main className={styles.docsShell}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-14" style={{ color: 'var(--text-primary)' }}>
+      <div className="mx-auto max-w-7xl px-4 py-10 pt-24 sm:px-6 md:py-14 md:pt-28" style={{ color: 'var(--text-primary)' }}>
         <div className="md:hidden mb-6">
           <p className={styles.docsMobileLabel}>Quick Jump</p>
           <div className={styles.docsMobileNav}>

@@ -124,14 +124,53 @@ export async function toUserProfileDto(userId: string): Promise<UserProfileDto> 
   const entitlementStatus = (user.entitlement?.status ??
     "inactive") as EntitlementStatus;
 
+  const googleOauth = await prisma.oAuthAccount.findFirst({
+    where: { userId, provider: "google" },
+    select: { id: true },
+  });
+
   return {
     id: user.id,
     name: user.name ?? user.email,
     email: user.email,
     avatarUrl: user.avatarUrl,
-    authProvider: "google",
+    authProvider: googleOauth ? "google" : "email",
     plan,
     entitlementStatus,
     updatedAt: user.updatedAt.toISOString(),
   };
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: { name?: string; avatarUrl?: string | null },
+): Promise<UserProfileDto> {
+  const data: { name?: string; avatarUrl?: string | null } = {};
+  if (typeof input.name === "string") {
+    const name = input.name.trim();
+    if (!name) {
+      throw new ApiError(ErrorCodes.VALIDATION_ERROR, "Name cannot be empty", 400);
+    }
+    if (name.length > 120) {
+      throw new ApiError(ErrorCodes.VALIDATION_ERROR, "Name is too long", 400);
+    }
+    data.name = name;
+  }
+  if (input.avatarUrl !== undefined) {
+    if (input.avatarUrl !== null && input.avatarUrl.length > 2_000_000) {
+      throw new ApiError(
+        ErrorCodes.VALIDATION_ERROR,
+        "Avatar payload is too large",
+        400,
+      );
+    }
+    data.avatarUrl = input.avatarUrl;
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+
+  return toUserProfileDto(userId);
 }

@@ -31,7 +31,7 @@ export function generateUserCode(): string {
   for (let i = 0; i < 8; i += 1) {
     code += alphabet[raw[i]! % alphabet.length];
   }
-  return `${code.slice(0, 4)}-${code.slice(4)}`;
+  return code;
 }
 
 export function safeEqual(a: string, b: string): boolean {

@@ -9,11 +9,11 @@
   "scripts": {
     "dev": "npm run dev:web",
     "dev:web": "next dev",
-    "dev:api": "npm run build -w @nela/shared && npm run dev -w @nela/api",
+    "dev:api": "npm run db:generate && npm run build -w @nela/shared && npm run dev -w @nela/api",
     "dev:all": "npm run dev:api & npm run dev:web",
-    "build": "npm run build -w @nela/shared && npm run build -w @nela/api && next build",
+    "build": "npm run db:generate && npm run build -w @nela/shared && npm run build -w @nela/api && next build",
     "build:web": "next build",
-    "build:api": "npm run build -w @nela/shared && npm run build -w @nela/api",
+    "build:api": "npm run db:generate && npm run build -w @nela/shared && npm run build -w @nela/api",
     "start": "next start",
     "lint": "eslint . && npm run lint -w @nela/shared && npm run lint -w @nela/api",
     "test": "npm run test -w @nela/shared && npm run test -w @nela/api",
@@ -25,6 +25,8 @@
   "dependencies": {
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.1",
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@vercel/analytics": "^2.0.1",
@@ -32,6 +34,7 @@
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.553.0",
     "mermaid": "^11.13.0",
@@ -46,6 +49,7 @@
     "rehype-react": "^8.0.0",
     "remark-directive": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.3",
     "shiki": "^4.0.2",
     "tailwind-merge": "^3.3.1",
     "three": "^0.183.1"
@@ -60,9 +64,23 @@
     "eslint": "9.39.1",
     "eslint-config-next": "16.0.8",
     "firebase-tools": "^15.0.0",
-    "prisma": "^6.5.0",
+    "prisma": "^7.9.0",
     "tailwindcss": "4.1.11",
     "tw-animate-css": "^1.4.0",
     "typescript": "5.9.3"
+  },
+  "allowScripts": {
+    "@prisma/client@7.9.0": true,
+    "@prisma/engines@6.19.3": true,
+    "@prisma/engines@7.9.0": true,
+    "prisma@7.9.0": true,
+    "@google/genai@1.52.0": true,
+    "@tailwindcss/oxide@4.1.11": true,
+    "esbuild@0.28.1": true,
+    "sharp@0.34.5": true,
+    "sharp@0.35.3": true,
+    "protobufjs@7.6.5": true,
+    "re2@1.26.1": true,
+    "unrs-resolver@1.12.2": true
   }
 }

@@ -7,5 +7,6 @@ coverage/
 !.env.example
 dist/
 apps/api/dist/
+apps/api/src/generated/
 packages/shared/dist/
 NELA-Webpage/package-lock.json

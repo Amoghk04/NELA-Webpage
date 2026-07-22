@@ -75,8 +75,8 @@ export default function Hero() {
   const fileLabel = asset ? assetTypeLabel(asset.type) : '';
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-6">
-      <div className="max-w-5xl mx-auto w-full flex flex-col items-center text-center z-10">
+    <section className="relative flex min-h-screen items-center justify-center px-4 pb-32 pt-24 sm:px-6 sm:pt-28">
+      <div className="z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
 
         {/* Dorky Terminal Badge */}
         <motion.div

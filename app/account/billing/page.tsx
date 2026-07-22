@@ -53,9 +53,9 @@ export default function BillingPage() {
   };
 
   return (
-    <main className="min-h-screen pt-28 px-6 pb-16">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="font-space text-4xl font-bold tracking-tight mb-2">
+    <main className="min-h-screen px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-2 font-space text-3xl font-bold tracking-tight sm:text-4xl">
           Billing
         </h1>
         <p className="mb-8" style={{ color: 'var(--text-secondary)' }}>

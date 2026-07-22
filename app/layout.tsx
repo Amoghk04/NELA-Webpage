@@ -5,6 +5,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import NavBar from '../components/NavBar';
 import ThemeProvider from '../components/ThemeProvider';
+import ThemeToggle from '../components/ThemeToggle';
+import AuthProvider from '../components/AuthProvider';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -28,8 +30,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="en" className={`light ${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider>
-          <NavBar />
-          {children}
+          <AuthProvider>
+            <NavBar />
+            {children}
+            <ThemeToggle />
+          </AuthProvider>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

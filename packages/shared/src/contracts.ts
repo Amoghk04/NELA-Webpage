@@ -12,7 +12,7 @@ export interface UserProfileDto {
   name: string;
   email: string;
   avatarUrl: string | null;
-  authProvider: "google";
+  authProvider: "google" | "email";
   plan: CloudPlan;
   entitlementStatus: EntitlementStatus;
   updatedAt: string;
@@ -54,6 +54,35 @@ export type DevicePollResponse =
   | DevicePollPendingResponse
   | DevicePollApprovedResponse
   | DevicePollDeniedResponse;
+
+export interface AuthTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  profile: UserProfileDto;
+}
+
+export interface EmailRegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+  deviceName?: string;
+}
+
+export interface EmailLoginRequest {
+  email: string;
+  password: string;
+  deviceName?: string;
+}
+
+export interface WebExchangeRequest {
+  code: string;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  avatarUrl?: string | null;
+}
 
 export interface RefreshTokenRequest {
   refreshToken: string;
