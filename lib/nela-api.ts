@@ -10,7 +10,7 @@ export type StoredProfile = {
   name: string;
   email: string;
   avatarUrl: string | null;
-  authProvider: "google";
+  authProvider: "google" | "email";
   plan: string;
   entitlementStatus: string;
   updatedAt: string;
