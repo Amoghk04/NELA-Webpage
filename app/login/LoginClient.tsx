@@ -25,13 +25,17 @@ export default function LoginClient() {
   const [name, setName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  const returnTo = '/account';
+  const nextParam = searchParams.get('next');
+  const returnTo =
+    nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+      ? nextParam
+      : '/account';
 
   const webGoogleStartUrl = useMemo(() => {
     const url = new URL(`${getApiBaseUrl()}/v1/auth/google/web/start`);
-    url.searchParams.set('returnTo', '/account');
+    url.searchParams.set('returnTo', returnTo);
     return url.toString();
-  }, []);
+  }, [returnTo]);
 
   const deviceGoogleStartUrl = useMemo(() => {
     if (!deviceCode) return null;

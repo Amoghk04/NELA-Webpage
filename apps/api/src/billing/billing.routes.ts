@@ -10,7 +10,10 @@ import { env } from "../config.js";
 import { requireAuth } from "../auth/auth.guard.js";
 import { prisma } from "../db/prisma.js";
 import {
+  createRazorpayPaymentLink,
   createRazorpaySubscription,
+  getCheckoutAmountPaise,
+  getCheckoutCurrency,
   getRazorpayPlanId,
   isRazorpayConfigured,
 } from "./razorpay.client.js";
@@ -24,44 +27,71 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
       .parse(request.body ?? {});
 
     if (!isRazorpayConfigured()) {
-      // Graceful stub structure when keys missing
-      const stub: CheckoutResponse = {
-        checkoutUrl: `${env.PUBLIC_WEB_URL}/account/billing?stub=checkout&plan=${body.plan}&error=razorpay_not_configured`,
-      };
+      throw new ApiError(
+        ErrorCodes.RAZORPAY_NOT_CONFIGURED,
+        "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env, then restart the API.",
+        503,
+      );
+    }
+
+    const planId = getRazorpayPlanId(body.plan);
+    const notes = {
+      nela_user_id: auth.userId,
+      nela_plan: body.plan,
+    };
+
+    // Prefer recurring subscription when Razorpay plan IDs are configured.
+    if (planId) {
+      const subscription = await createRazorpaySubscription({
+        planId,
+        notes,
+      });
+
+      await prisma.subscription.create({
+        data: {
+          userId: auth.userId,
+          provider: "razorpay",
+          razorpaySubscriptionId: subscription.id,
+          razorpayPlanId: planId,
+          plan: body.plan,
+          status: "created",
+        },
+      });
+
       await writeAuditLog({
         userId: auth.userId,
-        action: "billing.checkout.stub",
-        metadata: { plan: body.plan },
+        action: "billing.checkout.created",
+        metadata: {
+          plan: body.plan,
+          mode: "subscription",
+          razorpaySubscriptionId: subscription.id,
+        },
       });
-      return stub;
+
+      const checkoutUrl =
+        subscription.short_url ??
+        `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${subscription.id}`;
+
+      return { checkoutUrl } satisfies CheckoutResponse;
     }
 
-    let planId: string;
-    try {
-      planId = getRazorpayPlanId(body.plan);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return {
-          checkoutUrl: `${env.PUBLIC_WEB_URL}/account/billing?stub=checkout&plan=${body.plan}&error=razorpay_plan_missing`,
-        } satisfies CheckoutResponse;
-      }
-      throw err;
-    }
-
-    const subscription = await createRazorpaySubscription({
-      planId,
-      notes: {
-        nela_user_id: auth.userId,
-        nela_plan: body.plan,
-      },
+    // Keys-only path: hosted payment link (works with Razorpay test keys alone).
+    const amountPaise = getCheckoutAmountPaise(body.plan);
+    const currency = getCheckoutCurrency();
+    const paymentLink = await createRazorpayPaymentLink({
+      amountPaise,
+      currency,
+      description: `NELA ${body.plan === "pro" ? "Pro" : "Starter"} plan`,
+      callbackUrl: `${env.PUBLIC_WEB_URL}/account/billing?paid=1&plan=${body.plan}`,
+      notes,
     });
 
     await prisma.subscription.create({
       data: {
         userId: auth.userId,
         provider: "razorpay",
-        razorpaySubscriptionId: subscription.id,
-        razorpayPlanId: planId,
+        razorpaySubscriptionId: paymentLink.id,
+        razorpayPlanId: null,
         plan: body.plan,
         status: "created",
       },
@@ -70,24 +100,27 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     await writeAuditLog({
       userId: auth.userId,
       action: "billing.checkout.created",
-      metadata: { plan: body.plan, razorpaySubscriptionId: subscription.id },
+      metadata: {
+        plan: body.plan,
+        mode: "payment_link",
+        razorpayPaymentLinkId: paymentLink.id,
+        amountPaise,
+        currency,
+      },
     });
 
-    const checkoutUrl =
-      subscription.short_url ??
-      `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${subscription.id}`;
-
-    return { checkoutUrl } satisfies CheckoutResponse;
+    return { checkoutUrl: paymentLink.short_url } satisfies CheckoutResponse;
   });
 
   app.post("/v1/billing/razorpay/manage", async (request) => {
     const auth = await requireAuth(request);
 
     if (!isRazorpayConfigured()) {
-      const stub: BillingManageResponse = {
-        manageUrl: `${env.PUBLIC_WEB_URL}/account/billing?stub=manage&error=razorpay_not_configured`,
-      };
-      return stub;
+      throw new ApiError(
+        ErrorCodes.RAZORPAY_NOT_CONFIGURED,
+        "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env.",
+        503,
+      );
     }
 
     const latest = await prisma.subscription.findFirst({
