@@ -25,6 +25,7 @@ import {
   openRouterChatCompletions,
   toOpenRouterMessages,
 } from "../openrouter/openrouter.client.js";
+import { buildCachedOpenRouterRequest } from "../openrouter/prompt-cache.js";
 import {
   acquireKey,
   laneForMode,
@@ -63,6 +64,8 @@ async function callWithFallbacks(input: {
   tools?: CloudChatRequest["tools"];
   tool_choice?: CloudChatRequest["tool_choice"];
   response_format?: CloudChatRequest["response_format"];
+  /** Sticky OpenRouter session for prompt-cache routing. */
+  sessionId?: string;
 }): Promise<{
   upstream: Response;
   model: ModelCandidate;
@@ -83,7 +86,7 @@ async function callWithFallbacks(input: {
 
     try {
       const upstream = await openRouterChatCompletions(
-        {
+        buildCachedOpenRouterRequest({
           model: model.id,
           messages: orMessages,
           stream: input.stream,
@@ -92,7 +95,8 @@ async function callWithFallbacks(input: {
           tools: input.tools,
           tool_choice: input.tool_choice,
           response_format: input.response_format,
-        },
+          sessionId: input.sessionId,
+        }),
         pooled.apiKey,
       );
 
@@ -205,6 +209,7 @@ export async function runCloudChat(input: {
       tools: input.body.tools,
       tool_choice: input.body.tool_choice,
       response_format: input.body.response_format,
+      sessionId: input.body.client?.sessionId,
     });
     selectedModel = model.id;
 
@@ -273,7 +278,8 @@ export async function runCloudChat(input: {
           model: model.id,
         });
 
-    await recordUsageEvent({
+    // Don't block the OpenRouter SSE body on DB metering — start piping ASAP.
+    void recordUsageEvent({
       userId: input.userId,
       requestId: input.requestId,
       intent,
@@ -287,7 +293,7 @@ export async function runCloudChat(input: {
       estimatedCostUsd: streamCost,
       status: "streaming",
       countFastFree,
-    });
+    }).catch(() => undefined);
 
     return upstream;
   } catch (err) {

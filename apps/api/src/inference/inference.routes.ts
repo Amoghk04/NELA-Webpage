@@ -82,6 +82,7 @@ const chatSchema = z.object({
       appVersion: z.string().optional(),
       platform: z.string().optional(),
       workspaceIdHash: z.string().optional(),
+      sessionId: z.string().max(256).optional(),
     })
     .optional(),
 });
@@ -104,16 +105,27 @@ async function pipeUpstream(
   const res = reply.raw;
   res.writeHead(upstream.status, {
     "content-type": contentType ?? "text/event-stream",
-    "cache-control": "no-cache",
+    "cache-control": "no-cache, no-transform",
     connection: "keep-alive",
+    "x-accel-buffering": "no",
     "x-request-id": reply.getHeader("x-request-id") as string | undefined,
   });
+  // Flush headers immediately so clients can start reading SSE.
+  if (typeof (res as { flushHeaders?: () => void }).flushHeaders === "function") {
+    (res as { flushHeaders: () => void }).flushHeaders();
+  }
 
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      res.write(value);
+      const ok = res.write(value);
+      // Ask Node to flush when possible (compression / proxy buffering).
+      const flushable = res as { flush?: () => void };
+      if (typeof flushable.flush === "function") flushable.flush();
+      if (!ok) {
+        await new Promise<void>((resolve) => res.once("drain", resolve));
+      }
     }
   } finally {
     res.end();

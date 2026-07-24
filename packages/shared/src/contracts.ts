@@ -217,6 +217,11 @@ export interface CloudChatRequest {
     appVersion?: string;
     platform?: string;
     workspaceIdHash?: string;
+    /**
+     * Sticky OpenRouter session id (chat / tool-loop). Improves prompt-cache
+     * hit rates via provider sticky routing. Max 256 chars.
+     */
+    sessionId?: string;
   };
 }
 

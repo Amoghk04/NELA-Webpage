@@ -1,6 +1,7 @@
 import { ApiError, ErrorCodes, type CloudChatMessage } from "@nela/shared";
 import { env } from "../config.js";
 import { isOpenRouterPoolConfigured } from "./key-pool.js";
+import type { CachedOpenRouterChatRequest } from "./prompt-cache.js";
 
 export type OpenRouterChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
@@ -60,7 +61,7 @@ export function toOpenRouterMessages(
 
 /** Caller handles non-OK status (fallback / cooldown). */
 export async function openRouterChatCompletions(
-  body: OpenRouterChatRequest,
+  body: OpenRouterChatRequest | CachedOpenRouterChatRequest,
   apiKey: string,
 ): Promise<Response> {
   if (!apiKey) {
@@ -78,6 +79,11 @@ export async function openRouterChatCompletions(
       "content-type": "application/json",
       "HTTP-Referer": env.OPENROUTER_SITE_URL,
       "X-Title": env.OPENROUTER_APP_TITLE,
+      ...(typeof (body as CachedOpenRouterChatRequest).session_id === "string"
+        ? {
+            "x-session-id": (body as CachedOpenRouterChatRequest).session_id!,
+          }
+        : {}),
     },
     body: JSON.stringify(body),
   });
