@@ -1,108 +1,16 @@
-'use client';
-
-import { useState } from 'react';
-import Link from 'next/link';
-import { apiFetch, getAccessToken } from '@/lib/nela-api';
-import type { BillingManageResponse, CheckoutResponse } from '@nela/shared';
+import { Suspense } from 'react';
+import BillingClient from './BillingClient';
 
 export default function BillingPage() {
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const ensureAuth = () => {
-    if (!getAccessToken()) {
-      window.location.href = '/login';
-      return false;
-    }
-    return true;
-  };
-
-  const checkout = async (plan: 'starter' | 'pro') => {
-    if (!ensureAuth()) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await apiFetch<CheckoutResponse>(
-        '/v1/billing/razorpay/checkout',
-        {
-          method: 'POST',
-          body: JSON.stringify({ plan }),
-        },
-      );
-      window.location.href = res.checkoutUrl;
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Checkout failed');
-      setBusy(false);
-    }
-  };
-
-  const manage = async () => {
-    if (!ensureAuth()) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await apiFetch<BillingManageResponse>(
-        '/v1/billing/razorpay/manage',
-        { method: 'POST', body: '{}' },
-      );
-      window.location.href = res.manageUrl;
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Manage failed');
-      setBusy(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
-      <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 font-space text-3xl font-bold tracking-tight sm:text-4xl">
-          Billing
-        </h1>
-        <p className="mb-8" style={{ color: 'var(--text-secondary)' }}>
-          Upgrade or manage your Razorpay subscription. Entitlements activate
-          from webhooks, not checkout redirects alone.
-        </p>
-
-        <div className="flex flex-wrap gap-3 mb-6">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void checkout('starter')}
-            className="rounded-full px-5 py-2 font-medium"
-            style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
-          >
-            Upgrade to Starter
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void checkout('pro')}
-            className="rounded-full px-5 py-2 font-medium border"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            Upgrade to Pro
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void manage()}
-            className="rounded-full px-5 py-2 font-medium border"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            Manage subscription
-          </button>
-        </div>
-
-        {message ? (
-          <p className="text-sm mb-4" style={{ color: '#e11d48' }}>
-            {message}
-          </p>
-        ) : null}
-
-        <Link href="/account" style={{ color: 'var(--accent)' }}>
-          ← Back to account
-        </Link>
-      </div>
-    </main>
+    <Suspense
+      fallback={
+        <main className="min-h-screen px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
+          <p style={{ color: 'var(--text-secondary)' }}>Loading billing…</p>
+        </main>
+      }
+    >
+      <BillingClient />
+    </Suspense>
   );
 }

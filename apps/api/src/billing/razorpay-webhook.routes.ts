@@ -19,6 +19,13 @@ type RazorpayWebhookPayload = {
         cancel_at_cycle_end?: boolean;
       };
     };
+    payment_link?: {
+      entity?: {
+        id?: string;
+        status?: string;
+        notes?: Record<string, string>;
+      };
+    };
   };
 };
 
@@ -59,10 +66,12 @@ export async function razorpayWebhookRoutes(
     }
 
     const eventType = parsed.event ?? "unknown";
-    const entity = parsed.payload?.subscription?.entity;
+    const subscriptionEntity = parsed.payload?.subscription?.entity;
+    const paymentLinkEntity = parsed.payload?.payment_link?.entity;
+    const entityId = subscriptionEntity?.id ?? paymentLinkEntity?.id;
     const razorpayEventId =
       (request.headers["x-razorpay-event-id"] as string | undefined) ??
-      (entity?.id ? `${entity.id}:${eventType}:${payloadHash.slice(0, 12)}` : null);
+      (entityId ? `${entityId}:${eventType}:${payloadHash.slice(0, 12)}` : null);
 
     if (razorpayEventId) {
       const existing = await prisma.razorpayWebhookEvent.findUnique({
@@ -81,23 +90,42 @@ export async function razorpayWebhookRoutes(
       },
     });
 
-    if (entity?.id && entity.status) {
-      const notes = entity.notes ?? {};
+    if (subscriptionEntity?.id && subscriptionEntity.status) {
+      const notes = subscriptionEntity.notes ?? {};
       const userId = notes.nela_user_id;
       if (userId) {
         await upsertSubscriptionFromRazorpay({
           userId,
-          razorpaySubscriptionId: entity.id,
-          razorpayPlanId: entity.plan_id ?? null,
+          razorpaySubscriptionId: subscriptionEntity.id,
+          razorpayPlanId: subscriptionEntity.plan_id ?? null,
           plan: resolvePlan(notes),
-          status: entity.status,
-          currentPeriodStart: entity.current_start
-            ? new Date(entity.current_start * 1000)
+          status: subscriptionEntity.status,
+          currentPeriodStart: subscriptionEntity.current_start
+            ? new Date(subscriptionEntity.current_start * 1000)
             : null,
-          currentPeriodEnd: entity.current_end
-            ? new Date(entity.current_end * 1000)
+          currentPeriodEnd: subscriptionEntity.current_end
+            ? new Date(subscriptionEntity.current_end * 1000)
             : null,
-          cancelAtPeriodEnd: Boolean(entity.cancel_at_cycle_end),
+          cancelAtPeriodEnd: Boolean(subscriptionEntity.cancel_at_cycle_end),
+        });
+      }
+    }
+
+    // One-time payment links (keys-only checkout path)
+    if (
+      paymentLinkEntity?.id &&
+      (eventType === "payment_link.paid" ||
+        paymentLinkEntity.status === "paid")
+    ) {
+      const notes = paymentLinkEntity.notes ?? {};
+      const userId = notes.nela_user_id;
+      if (userId) {
+        await upsertSubscriptionFromRazorpay({
+          userId,
+          razorpaySubscriptionId: paymentLinkEntity.id,
+          razorpayPlanId: null,
+          plan: resolvePlan(notes),
+          status: "active",
         });
       }
     }
