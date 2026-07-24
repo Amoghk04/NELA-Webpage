@@ -12,6 +12,7 @@ import { billingRoutes } from "./billing/billing.routes.js";
 import { razorpayWebhookRoutes } from "./billing/razorpay-webhook.routes.js";
 import { inferenceRoutes } from "./inference/inference.routes.js";
 import { prisma } from "./db/prisma.js";
+import { ensureDefaultPools } from "./openrouter/key-provisioner.js";
 
 async function buildServer() {
   const app = Fastify({
@@ -98,6 +99,13 @@ async function buildServer() {
 
 async function main() {
   const app = await buildServer();
+
+  // Best-effort: mint DB pool keys when OPENROUTER_MANAGEMENT_KEY is set.
+  try {
+    await ensureDefaultPools();
+  } catch (err) {
+    app.log.warn({ err }, "OpenRouter ensureDefaultPools skipped");
+  }
 
   const shutdown = async () => {
     await app.close();

@@ -6,21 +6,36 @@ import {
   runCloudChat,
 } from "./inference.service.js";
 
+const toolCallSchema = z.object({
+  id: z.string(),
+  type: z.literal("function"),
+  function: z.object({
+    name: z.string(),
+    arguments: z.string(),
+  }),
+});
+
 const chatSchema = z.object({
-  intent: z.enum([
-    "quick_chat",
-    "summarize",
-    "rag_answer",
-    "artifact_plan",
-    "deep_reasoning",
-    "vision",
-    "cheap_background",
-  ]),
+  mode: z.enum(["fast", "smart", "deep", "auto"]),
+  intent: z
+    .enum([
+      "quick_chat",
+      "summarize",
+      "rag_answer",
+      "artifact_plan",
+      "deep_reasoning",
+      "vision",
+      "cheap_background",
+    ])
+    .optional(),
   messages: z
     .array(
       z.object({
-        role: z.enum(["system", "user", "assistant"]),
-        content: z.string(),
+        role: z.enum(["system", "user", "assistant", "tool"]),
+        content: z.string().nullable().optional(),
+        tool_calls: z.array(toolCallSchema).optional(),
+        tool_call_id: z.string().optional(),
+        name: z.string().optional(),
       }),
     )
     .min(1),
@@ -34,6 +49,32 @@ const chatSchema = z.object({
     .object({
       maxTokens: z.number().int().positive().optional(),
       temperature: z.number().min(0).max(2).optional(),
+    })
+    .optional(),
+  tools: z
+    .array(
+      z.object({
+        type: z.literal("function"),
+        function: z.object({
+          name: z.string(),
+          description: z.string().optional(),
+          parameters: z.record(z.unknown()).optional(),
+        }),
+      }),
+    )
+    .optional(),
+  tool_choice: z
+    .union([
+      z.enum(["none", "auto", "required"]),
+      z.object({
+        type: z.literal("function"),
+        function: z.object({ name: z.string() }),
+      }),
+    ])
+    .optional(),
+  response_format: z
+    .object({
+      type: z.enum(["json_object", "text"]),
     })
     .optional(),
   client: z
@@ -58,7 +99,6 @@ async function pipeUpstream(
     return reply.send(text);
   }
 
-  // Node fetch ReadableStream → Fastify
   const reader = upstream.body.getReader();
   reply.hijack();
   const res = reply.raw;
@@ -103,6 +143,7 @@ export async function inferenceRoutes(app: FastifyInstance): Promise<void> {
     const auth = await requireAuth(request);
     const partial = chatSchema.omit({ intent: true }).extend({
       intent: z.literal("artifact_plan").optional(),
+      mode: z.enum(["fast", "smart", "deep", "auto"]).optional(),
     });
     const body = partial.parse(request.body ?? {});
     const full = asArtifactPlanRequest({

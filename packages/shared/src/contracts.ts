@@ -7,6 +7,12 @@ export type EntitlementStatus =
   | "cancelled"
   | "quota_exhausted";
 
+/** User-facing OpenRouter quality tier. Never expose underlying model IDs in UI. */
+export type CloudMode = "fast" | "smart" | "deep" | "auto";
+
+/** Resolved tier after Auto classification (never `auto`). */
+export type ResolvedCloudMode = "fast" | "smart" | "deep";
+
 export interface UserProfileDto {
   id: string;
   name: string;
@@ -103,10 +109,17 @@ export interface EntitlementResponse {
   cloudEnabled: boolean;
   plan: CloudPlan;
   status: EntitlementStatus;
+  /** True when Smart/Deep (paid lanes) are allowed. */
+  paidCloud: boolean;
   quota: {
     includedUsd: number;
     usedUsd: number;
     remainingUsd: number;
+  };
+  fastFree: {
+    limit: number;
+    used: number;
+    remaining: number;
   };
   limits: {
     maxInputTokens: number;
@@ -136,13 +149,54 @@ export type CloudIntent =
   | "vision"
   | "cheap_background";
 
+/** OpenAI-compatible tool call emitted by the assistant. */
+export interface CloudToolCallFunction {
+  name: string;
+  arguments: string;
+}
+
+export interface CloudToolCall {
+  id: string;
+  type: "function";
+  function: CloudToolCallFunction;
+}
+
+/** OpenAI-compatible function tool definition (desktop is the tool host). */
+export interface CloudToolFunctionDef {
+  name: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
+export interface CloudToolDefinition {
+  type: "function";
+  function: CloudToolFunctionDef;
+}
+
+export type CloudToolChoice =
+  | "none"
+  | "auto"
+  | "required"
+  | { type: "function"; function: { name: string } };
+
+export interface CloudResponseFormat {
+  type: "json_object" | "text";
+}
+
 export interface CloudChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
+  role: "system" | "user" | "assistant" | "tool";
+  /** Text content; may be null when assistant emits tool_calls only. */
+  content?: string | null;
+  tool_calls?: CloudToolCall[];
+  tool_call_id?: string;
+  name?: string;
 }
 
 export interface CloudChatRequest {
-  intent: CloudIntent;
+  /** Primary UX control for OpenRouter quality. */
+  mode: CloudMode;
+  /** Optional capability hint (e.g. vision). Defaults to quick_chat when omitted. */
+  intent?: CloudIntent;
   messages: CloudChatMessage[];
   stream: boolean;
   privacy: {
@@ -154,6 +208,11 @@ export interface CloudChatRequest {
     maxTokens?: number;
     temperature?: number;
   };
+  /** OpenAI-style tools; executed on the desktop client, not the API. */
+  tools?: CloudToolDefinition[];
+  tool_choice?: CloudToolChoice;
+  /** Prefer json_object for artifact_plan on cloud (no GBNF). */
+  response_format?: CloudResponseFormat;
   client?: {
     appVersion?: string;
     platform?: string;
@@ -163,4 +222,11 @@ export interface CloudChatRequest {
 
 export interface ArtifactPlanRequest extends Omit<CloudChatRequest, "intent"> {
   intent?: "artifact_plan";
+}
+
+export interface CloudChatMeta {
+  requestedMode: CloudMode;
+  resolvedMode: ResolvedCloudMode;
+  /** Internal only — omit from non-tech UI. */
+  model?: string;
 }

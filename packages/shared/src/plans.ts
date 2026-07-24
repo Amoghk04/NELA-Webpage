@@ -7,16 +7,23 @@ export interface PlanLimits {
   maxOutputTokens: number;
   requestsPerMinute: number;
   defaultStatus: EntitlementStatus;
+  /** Daily Fast-mode free requests (OpenRouter free models). */
+  fastFreeDailyLimit: number;
 }
+
+/** Default daily Fast allowance for free and unpaid users. */
+export const DEFAULT_FAST_FREE_DAILY_LIMIT = 20;
 
 export const PLAN_LIMITS: Record<CloudPlan, PlanLimits> = {
   free: {
+    // Fast-only cloud is allowed separately; paid Smart/Deep need cloudEnabled.
     cloudEnabled: false,
     includedUsdMonthly: 0,
-    maxInputTokens: 0,
-    maxOutputTokens: 0,
-    requestsPerMinute: 0,
-    defaultStatus: "inactive",
+    maxInputTokens: 32_768,
+    maxOutputTokens: 2_048,
+    requestsPerMinute: 10,
+    defaultStatus: "active",
+    fastFreeDailyLimit: DEFAULT_FAST_FREE_DAILY_LIMIT,
   },
   starter: {
     cloudEnabled: true,
@@ -25,6 +32,7 @@ export const PLAN_LIMITS: Record<CloudPlan, PlanLimits> = {
     maxOutputTokens: 4_096,
     requestsPerMinute: 20,
     defaultStatus: "active",
+    fastFreeDailyLimit: 100,
   },
   pro: {
     cloudEnabled: true,
@@ -33,6 +41,7 @@ export const PLAN_LIMITS: Record<CloudPlan, PlanLimits> = {
     maxOutputTokens: 8_192,
     requestsPerMinute: 60,
     defaultStatus: "active",
+    fastFreeDailyLimit: 500,
   },
 };
 

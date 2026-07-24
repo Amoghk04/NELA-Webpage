@@ -231,6 +231,13 @@ export default function AccountPage() {
             <h2 className="mb-2 font-semibold">Cloud entitlement</h2>
             <p className="mb-1 text-sm">
               Cloud enabled: {entitlement.cloudEnabled ? 'yes' : 'no'}
+              {' · '}
+              Paid (Smart/Deep): {entitlement.paidCloud ? 'yes' : 'no'}
+            </p>
+            <p className="mb-1 text-sm">
+              Fast free today: {entitlement.fastFree.used} /{' '}
+              {entitlement.fastFree.limit} used (
+              {entitlement.fastFree.remaining} remaining)
             </p>
             <p className="mb-1 text-sm">
               Quota: ${entitlement.quota.usedUsd.toFixed(2)} / $

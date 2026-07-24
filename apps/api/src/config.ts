@@ -36,9 +36,19 @@ export type Env = {
   RAZORPAY_WEBHOOK_SECRET?: string;
   RAZORPAY_PLAN_STARTER_ID?: string;
   RAZORPAY_PLAN_PRO_ID?: string;
+  /** Legacy single key — used as fallback for both lanes. */
   OPENROUTER_API_KEY?: string;
+  OPENROUTER_API_KEY_FREE?: string;
+  OPENROUTER_API_KEY_PAID?: string;
+  /** Management key for programmatic pool provisioning (not for chat). */
+  OPENROUTER_MANAGEMENT_KEY?: string;
   OPENROUTER_SITE_URL: string;
   OPENROUTER_APP_TITLE: string;
+  /**
+   * Phase-1 stub: force paid entitlement plan without Razorpay.
+   * Values: free | starter | pro. Empty = use DB entitlement only.
+   */
+  CLOUD_ENTITLEMENT_OVERRIDE?: "free" | "starter" | "pro";
   LOG_LEVEL: string;
   PROMPT_LOGGING_ENABLED: boolean;
   ACCESS_TOKEN_TTL_SECONDS: number;
@@ -57,6 +67,12 @@ function required(name: string, fallback?: string): string {
 function optional(name: string): string | undefined {
   const value = process.env[name];
   return value && value.trim().length > 0 ? value : undefined;
+}
+
+function optionalPlanOverride(): "free" | "starter" | "pro" | undefined {
+  const v = optional("CLOUD_ENTITLEMENT_OVERRIDE");
+  if (v === "free" || v === "starter" || v === "pro") return v;
+  return undefined;
 }
 
 export function loadEnv(): Env {
@@ -91,8 +107,12 @@ export function loadEnv(): Env {
     RAZORPAY_PLAN_STARTER_ID: optional("RAZORPAY_PLAN_STARTER_ID"),
     RAZORPAY_PLAN_PRO_ID: optional("RAZORPAY_PLAN_PRO_ID"),
     OPENROUTER_API_KEY: optional("OPENROUTER_API_KEY"),
+    OPENROUTER_API_KEY_FREE: optional("OPENROUTER_API_KEY_FREE"),
+    OPENROUTER_API_KEY_PAID: optional("OPENROUTER_API_KEY_PAID"),
+    OPENROUTER_MANAGEMENT_KEY: optional("OPENROUTER_MANAGEMENT_KEY"),
     OPENROUTER_SITE_URL: required("OPENROUTER_SITE_URL", "https://nela.ai"),
     OPENROUTER_APP_TITLE: required("OPENROUTER_APP_TITLE", "NELA"),
+    CLOUD_ENTITLEMENT_OVERRIDE: optionalPlanOverride(),
     LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
     PROMPT_LOGGING_ENABLED: process.env.PROMPT_LOGGING_ENABLED === "true",
     ACCESS_TOKEN_TTL_SECONDS: Number(process.env.ACCESS_TOKEN_TTL_SECONDS ?? "900"),

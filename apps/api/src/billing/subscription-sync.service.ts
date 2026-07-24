@@ -3,6 +3,12 @@ import { prisma } from "../db/prisma.js";
 import { syncEntitlementFromPlan } from "../entitlements/entitlements.service.js";
 import { writeAuditLog } from "../security/audit-log.js";
 
+/**
+ * Razorpay → entitlement writer (Phase 2).
+ * OpenRouter mode gates read Entitlement only — they do not call Razorpay.
+ * Until checkout/webhooks are fully live, use CLOUD_ENTITLEMENT_OVERRIDE or
+ * manual Entitlement rows to unlock Smart/Deep.
+ */
 function mapRazorpayStatus(status: string): {
   entitlementStatus: string;
   cloudEnabled: boolean;
