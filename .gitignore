@@ -5,12 +5,7 @@ coverage/
 *.log
 .env*
 !.env.example
-dist/
-apps/api/dist/
-apps/api/src/generated/
-packages/shared/dist/
 
-# Neon / agent local tooling
-.neon
+# Agent local tooling
 .agents/
 skills-lock.json
