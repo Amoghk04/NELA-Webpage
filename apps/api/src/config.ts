@@ -93,10 +93,7 @@ export function loadEnv(): Env {
     API_PORT: Number(process.env.API_PORT ?? "3001"),
     PUBLIC_WEB_URL: required("PUBLIC_WEB_URL", "http://localhost:3000"),
     PUBLIC_API_URL: required("PUBLIC_API_URL", "http://localhost:3001"),
-    DATABASE_URL: required(
-      "DATABASE_URL",
-      "postgresql://postgres:postgres@localhost:5432/nela",
-    ),
+    DATABASE_URL: required("DATABASE_URL"),
     REDIS_URL: optional("REDIS_URL"),
     GOOGLE_CLIENT_ID: optional("GOOGLE_CLIENT_ID"),
     GOOGLE_CLIENT_SECRET: optional("GOOGLE_CLIENT_SECRET"),

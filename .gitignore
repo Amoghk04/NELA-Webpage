@@ -9,4 +9,8 @@ dist/
 apps/api/dist/
 apps/api/src/generated/
 packages/shared/dist/
-NELA-Webpage/package-lock.json
+
+# Neon / agent local tooling
+.neon
+.agents/
+skills-lock.json

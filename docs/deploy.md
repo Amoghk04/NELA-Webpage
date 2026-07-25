@@ -1,28 +1,15 @@
-# Local infrastructure for NELA API
+# Database & deploy notes
 
-## Start Postgres
+## Database (Neon)
 
-```bash
-docker compose -f infra/docker-compose.yml up -d
-```
+See **[neon.md](./neon.md)** for setup and Neon CLI.
 
-## Optional Redis
+Quick path:
 
-```bash
-docker compose -f infra/docker-compose.yml --profile redis up -d
-```
+1. `npx neon env pull` (writes `DATABASE_URL` into `.env`)
+2. `npm run db:push` (applies `prisma/schema.prisma`)
 
-Without Redis, the API uses an in-memory rate-limit store.
-
-## Apply schema
-
-From repo root (after copying `.env.example` → `.env`):
-
-```bash
-npx prisma migrate dev --name init
-# or for local prototyping:
-npx prisma db push
-```
+`REDIS_URL` is optional. Leave it empty to use the in-memory rate-limit store.
 
 ## Deploy split (Vercel + Render)
 
@@ -43,6 +30,8 @@ Keep this monorepo. Do **not** move the API to a separate repo for OpenRouter.
 - `CLOUD_ENTITLEMENT_OVERRIDE=pro` — Phase-1 stub to test Smart/Deep without Razorpay
 
 Desktop and the web app call `PUBLIC_API_URL` on Render. OpenRouter keys never leave the API process.
+
+On deploy, run `npm run db:push` (or switch to migrations later if you want versioned schema history) against the Neon `DATABASE_URL` before/with the API release.
 
 ### Razorpay (Phase 2)
 
