@@ -21,6 +21,7 @@
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.6.1",
     "fastify": "^5.2.1",
+    "fastify-type-provider-zod": "^4.0.2",
     "jose": "^6.0.8",
     "pino": "^9.6.0",
     "zod": "^3.24.2"

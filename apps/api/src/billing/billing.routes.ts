@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
   ApiError,
@@ -18,32 +19,86 @@ import {
   isRazorpayConfigured,
 } from "./razorpay.client.js";
 import { writeAuditLog } from "../security/audit-log.js";
+import { bearerSecurity } from "../swagger/security.js";
+
+const checkoutBody = z.object({
+  plan: z.enum(["starter", "pro"]),
+});
 
 export async function billingRoutes(app: FastifyInstance): Promise<void> {
-  app.post("/v1/billing/razorpay/checkout", async (request) => {
-    const auth = await requireAuth(request);
-    const body = z
-      .object({ plan: z.enum(["starter", "pro"]) })
-      .parse(request.body ?? {});
+  const r = app.withTypeProvider<ZodTypeProvider>();
 
-    if (!isRazorpayConfigured()) {
-      throw new ApiError(
-        ErrorCodes.RAZORPAY_NOT_CONFIGURED,
-        "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env, then restart the API.",
-        503,
-      );
-    }
+  r.post(
+    "/v1/billing/razorpay/checkout",
+    {
+      schema: {
+        tags: ["Billing"],
+        summary: "Create Razorpay checkout / payment link",
+        security: [...bearerSecurity],
+        body: checkoutBody,
+      },
+    },
+    async (request) => {
+      const auth = await requireAuth(request);
+      const body = request.body;
 
-    const planId = getRazorpayPlanId(body.plan);
-    const notes = {
-      nela_user_id: auth.userId,
-      nela_plan: body.plan,
-    };
+      if (!isRazorpayConfigured()) {
+        throw new ApiError(
+          ErrorCodes.RAZORPAY_NOT_CONFIGURED,
+          "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env, then restart the API.",
+          503,
+        );
+      }
 
-    // Prefer recurring subscription when Razorpay plan IDs are configured.
-    if (planId) {
-      const subscription = await createRazorpaySubscription({
-        planId,
+      const planId = getRazorpayPlanId(body.plan);
+      const notes = {
+        nela_user_id: auth.userId,
+        nela_plan: body.plan,
+      };
+
+      // Prefer recurring subscription when Razorpay plan IDs are configured.
+      if (planId) {
+        const subscription = await createRazorpaySubscription({
+          planId,
+          notes,
+        });
+
+        await prisma.subscription.create({
+          data: {
+            userId: auth.userId,
+            provider: "razorpay",
+            razorpaySubscriptionId: subscription.id,
+            razorpayPlanId: planId,
+            plan: body.plan,
+            status: "created",
+          },
+        });
+
+        await writeAuditLog({
+          userId: auth.userId,
+          action: "billing.checkout.created",
+          metadata: {
+            plan: body.plan,
+            mode: "subscription",
+            razorpaySubscriptionId: subscription.id,
+          },
+        });
+
+        const checkoutUrl =
+          subscription.short_url ??
+          `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${subscription.id}`;
+
+        return { checkoutUrl } satisfies CheckoutResponse;
+      }
+
+      // Keys-only path: hosted payment link (works with Razorpay test keys alone).
+      const amountPaise = getCheckoutAmountPaise(body.plan);
+      const currency = getCheckoutCurrency();
+      const paymentLink = await createRazorpayPaymentLink({
+        amountPaise,
+        currency,
+        description: `NELA ${body.plan === "pro" ? "Pro" : "Starter"} plan`,
+        callbackUrl: `${env.PUBLIC_WEB_URL}/account/billing?paid=1&plan=${body.plan}`,
         notes,
       });
 
@@ -51,8 +106,8 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         data: {
           userId: auth.userId,
           provider: "razorpay",
-          razorpaySubscriptionId: subscription.id,
-          razorpayPlanId: planId,
+          razorpaySubscriptionId: paymentLink.id,
+          razorpayPlanId: null,
           plan: body.plan,
           status: "created",
         },
@@ -63,83 +118,55 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         action: "billing.checkout.created",
         metadata: {
           plan: body.plan,
-          mode: "subscription",
-          razorpaySubscriptionId: subscription.id,
+          mode: "payment_link",
+          razorpayPaymentLinkId: paymentLink.id,
+          amountPaise,
+          currency,
         },
       });
 
-      const checkoutUrl =
-        subscription.short_url ??
-        `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${subscription.id}`;
+      return { checkoutUrl: paymentLink.short_url } satisfies CheckoutResponse;
+    },
+  );
 
-      return { checkoutUrl } satisfies CheckoutResponse;
-    }
-
-    // Keys-only path: hosted payment link (works with Razorpay test keys alone).
-    const amountPaise = getCheckoutAmountPaise(body.plan);
-    const currency = getCheckoutCurrency();
-    const paymentLink = await createRazorpayPaymentLink({
-      amountPaise,
-      currency,
-      description: `NELA ${body.plan === "pro" ? "Pro" : "Starter"} plan`,
-      callbackUrl: `${env.PUBLIC_WEB_URL}/account/billing?paid=1&plan=${body.plan}`,
-      notes,
-    });
-
-    await prisma.subscription.create({
-      data: {
-        userId: auth.userId,
-        provider: "razorpay",
-        razorpaySubscriptionId: paymentLink.id,
-        razorpayPlanId: null,
-        plan: body.plan,
-        status: "created",
+  r.post(
+    "/v1/billing/razorpay/manage",
+    {
+      schema: {
+        tags: ["Billing"],
+        summary: "Get subscription manage URL",
+        security: [...bearerSecurity],
       },
-    });
+    },
+    async (request) => {
+      const auth = await requireAuth(request);
 
-    await writeAuditLog({
-      userId: auth.userId,
-      action: "billing.checkout.created",
-      metadata: {
-        plan: body.plan,
-        mode: "payment_link",
-        razorpayPaymentLinkId: paymentLink.id,
-        amountPaise,
-        currency,
-      },
-    });
+      if (!isRazorpayConfigured()) {
+        throw new ApiError(
+          ErrorCodes.RAZORPAY_NOT_CONFIGURED,
+          "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env.",
+          503,
+        );
+      }
 
-    return { checkoutUrl: paymentLink.short_url } satisfies CheckoutResponse;
-  });
+      const latest = await prisma.subscription.findFirst({
+        where: { userId: auth.userId, provider: "razorpay" },
+        orderBy: { updatedAt: "desc" },
+      });
 
-  app.post("/v1/billing/razorpay/manage", async (request) => {
-    const auth = await requireAuth(request);
+      if (!latest?.razorpaySubscriptionId) {
+        throw new ApiError(
+          ErrorCodes.NOT_FOUND,
+          "No Razorpay subscription found for this account",
+          404,
+        );
+      }
 
-    if (!isRazorpayConfigured()) {
-      throw new ApiError(
-        ErrorCodes.RAZORPAY_NOT_CONFIGURED,
-        "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in NELA-Webpage/.env.",
-        503,
-      );
-    }
-
-    const latest = await prisma.subscription.findFirst({
-      where: { userId: auth.userId, provider: "razorpay" },
-      orderBy: { updatedAt: "desc" },
-    });
-
-    if (!latest?.razorpaySubscriptionId) {
-      throw new ApiError(
-        ErrorCodes.NOT_FOUND,
-        "No Razorpay subscription found for this account",
-        404,
-      );
-    }
-
-    // Razorpay customer portal is merchant-hosted; return account billing page
-    // with subscription context for the dashboard to manage.
-    return {
-      manageUrl: `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${latest.razorpaySubscriptionId}`,
-    } satisfies BillingManageResponse;
-  });
+      // Razorpay customer portal is merchant-hosted; return account billing page
+      // with subscription context for the dashboard to manage.
+      return {
+        manageUrl: `${env.PUBLIC_WEB_URL}/account/billing?subscription_id=${latest.razorpaySubscriptionId}`,
+      } satisfies BillingManageResponse;
+    },
+  );
 }

@@ -1,10 +1,12 @@
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { requireAuth } from "../auth/auth.guard.js";
 import {
   asArtifactPlanRequest,
   runCloudChat,
 } from "./inference.service.js";
+import { bearerSecurity } from "../swagger/security.js";
 
 const toolCallSchema = z.object({
   id: z.string(),
@@ -87,6 +89,11 @@ const chatSchema = z.object({
     .optional(),
 });
 
+const artifactPlanBody = chatSchema.omit({ intent: true }).extend({
+  intent: z.literal("artifact_plan").optional(),
+  mode: z.enum(["fast", "smart", "deep", "auto"]).optional(),
+});
+
 async function pipeUpstream(
   reply: import("fastify").FastifyReply,
   upstream: Response,
@@ -133,48 +140,71 @@ async function pipeUpstream(
 }
 
 export async function inferenceRoutes(app: FastifyInstance): Promise<void> {
-  app.post("/v1/ai/chat/completions", async (request, reply) => {
-    const auth = await requireAuth(request);
-    const body = chatSchema.parse(request.body ?? {});
-    const upstream = await runCloudChat({
-      userId: auth.userId,
-      requestId: request.requestId,
-      body,
-    });
+  const r = app.withTypeProvider<ZodTypeProvider>();
 
-    if (body.stream) {
-      await pipeUpstream(reply, upstream);
-      return;
-    }
+  r.post(
+    "/v1/ai/chat/completions",
+    {
+      schema: {
+        tags: ["Inference"],
+        summary: "Cloud chat completions (OpenRouter)",
+        description:
+          "Authenticated proxy to OpenRouter. Supports streaming SSE when stream=true. Tools execute on the desktop client.",
+        security: [...bearerSecurity],
+        body: chatSchema,
+      },
+    },
+    async (request, reply) => {
+      const auth = await requireAuth(request);
+      const body = request.body;
+      const upstream = await runCloudChat({
+        userId: auth.userId,
+        requestId: request.requestId,
+        body,
+      });
 
-    const json = await upstream.json();
-    return reply.send(json);
-  });
+      if (body.stream) {
+        await pipeUpstream(reply, upstream);
+        return;
+      }
 
-  app.post("/v1/ai/artifact-plan", async (request, reply) => {
-    const auth = await requireAuth(request);
-    const partial = chatSchema.omit({ intent: true }).extend({
-      intent: z.literal("artifact_plan").optional(),
-      mode: z.enum(["fast", "smart", "deep", "auto"]).optional(),
-    });
-    const body = partial.parse(request.body ?? {});
-    const full = asArtifactPlanRequest({
-      ...body,
-      stream: body.stream ?? false,
-    });
+      const json = await upstream.json();
+      return reply.send(json);
+    },
+  );
 
-    const upstream = await runCloudChat({
-      userId: auth.userId,
-      requestId: request.requestId,
-      body: full,
-    });
+  r.post(
+    "/v1/ai/artifact-plan",
+    {
+      schema: {
+        tags: ["Inference"],
+        summary: "Artifact plan generation (JSON)",
+        description:
+          "Same as chat completions with artifact_plan intent. Prefer response_format json_object on cloud.",
+        security: [...bearerSecurity],
+        body: artifactPlanBody,
+      },
+    },
+    async (request, reply) => {
+      const auth = await requireAuth(request);
+      const full = asArtifactPlanRequest({
+        ...request.body,
+        stream: request.body.stream ?? false,
+      });
 
-    if (full.stream) {
-      await pipeUpstream(reply, upstream);
-      return;
-    }
+      const upstream = await runCloudChat({
+        userId: auth.userId,
+        requestId: request.requestId,
+        body: full,
+      });
 
-    const json = await upstream.json();
-    return reply.send(json);
-  });
+      if (full.stream) {
+        await pipeUpstream(reply, upstream);
+        return;
+      }
+
+      const json = await upstream.json();
+      return reply.send(json);
+    },
+  );
 }

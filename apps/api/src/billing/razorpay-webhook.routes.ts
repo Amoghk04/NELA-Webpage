@@ -40,7 +40,18 @@ function resolvePlan(
 export async function razorpayWebhookRoutes(
   app: FastifyInstance,
 ): Promise<void> {
-  app.post("/v1/webhooks/razorpay", async (request, reply) => {
+  app.post(
+    "/v1/webhooks/razorpay",
+    {
+      schema: {
+        tags: ["Webhooks"],
+        summary: "Razorpay webhook receiver",
+        description:
+          "Verified via X-Razorpay-Signature. Not for browser use.",
+        security: [],
+      },
+    },
+    async (request, reply) => {
     const rawBody =
       (request as { rawBody?: Buffer }).rawBody ??
       Buffer.from(JSON.stringify(request.body ?? {}), "utf8");

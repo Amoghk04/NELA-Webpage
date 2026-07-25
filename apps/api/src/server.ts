@@ -13,7 +13,10 @@ import { razorpayWebhookRoutes } from "./billing/razorpay-webhook.routes.js";
 import { inferenceRoutes } from "./inference/inference.routes.js";
 import { prisma } from "./db/prisma.js";
 import { ensureDefaultPools } from "./openrouter/key-provisioner.js";
-import { registerSwagger } from "./swagger/register.js";
+import {
+  registerSwagger,
+  setupZodTypeProvider,
+} from "./swagger/register.js";
 
 async function buildServer() {
   const app = Fastify({
@@ -23,6 +26,9 @@ async function buildServer() {
     // Needed for Razorpay signature verification
     bodyLimit: 2 * 1024 * 1024,
   });
+
+  // Zod schemas on routes (and Swagger transform) need these compilers.
+  setupZodTypeProvider(app);
 
   // Preserve raw body for webhook signature checks
   app.addContentTypeParser(
@@ -86,10 +92,20 @@ async function buildServer() {
     });
   });
 
-  // OpenAPI / Swagger UI before routes (static spec; order does not matter for coverage).
+  // Must register before routes so dynamic OpenAPI discovers them.
   await registerSwagger(app);
 
-  app.get("/healthz", async () => ({ ok: true }));
+  app.get(
+    "/healthz",
+    {
+      schema: {
+        tags: ["Health"],
+        summary: "Health check",
+        security: [],
+      },
+    },
+    async () => ({ ok: true }),
+  );
 
   await app.register(authRoutes);
   await app.register(usersRoutes);
