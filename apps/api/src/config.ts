@@ -54,6 +54,11 @@ export type Env = {
   ACCESS_TOKEN_TTL_SECONDS: number;
   DEVICE_LOGIN_TTL_SECONDS: number;
   DEVICE_POLL_INTERVAL_SECONDS: number;
+  /**
+   * Swagger UI at /docs. Default: on in non-production, off in production.
+   * Set SWAGGER_ENABLED=true|false to override.
+   */
+  SWAGGER_ENABLED?: boolean;
 };
 
 function required(name: string, fallback?: string): string {
@@ -72,6 +77,13 @@ function optional(name: string): string | undefined {
 function optionalPlanOverride(): "free" | "starter" | "pro" | undefined {
   const v = optional("CLOUD_ENTITLEMENT_OVERRIDE");
   if (v === "free" || v === "starter" || v === "pro") return v;
+  return undefined;
+}
+
+function optionalBool(name: string): boolean | undefined {
+  const value = optional(name)?.toLowerCase();
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
   return undefined;
 }
 
@@ -120,6 +132,7 @@ export function loadEnv(): Env {
     DEVICE_POLL_INTERVAL_SECONDS: Number(
       process.env.DEVICE_POLL_INTERVAL_SECONDS ?? "5",
     ),
+    SWAGGER_ENABLED: optionalBool("SWAGGER_ENABLED"),
   };
 }
 

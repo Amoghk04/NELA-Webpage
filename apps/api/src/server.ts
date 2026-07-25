@@ -13,6 +13,7 @@ import { razorpayWebhookRoutes } from "./billing/razorpay-webhook.routes.js";
 import { inferenceRoutes } from "./inference/inference.routes.js";
 import { prisma } from "./db/prisma.js";
 import { ensureDefaultPools } from "./openrouter/key-provisioner.js";
+import { registerSwagger } from "./swagger/register.js";
 
 async function buildServer() {
   const app = Fastify({
@@ -84,6 +85,9 @@ async function buildServer() {
       requestId: request.requestId,
     });
   });
+
+  // OpenAPI / Swagger UI before routes (static spec; order does not matter for coverage).
+  await registerSwagger(app);
 
   app.get("/healthz", async () => ({ ok: true }));
 
