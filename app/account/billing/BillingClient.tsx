@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch, getAccessToken } from '@/lib/nela-api';
-import type { BillingManageResponse, CheckoutResponse } from '@nela/shared';
+import type { BillingManageResponse, CheckoutResponse } from '@/lib/api-types';
 
 export default function BillingClient() {
   const searchParams = useSearchParams();

@@ -6,7 +6,11 @@ import { useState } from 'react';
 import { formatBytes } from '@/lib/releases';
 import { trackClientEvent } from '@/lib/analytics-client';
 import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { getApiBaseUrl } from '@/lib/nela-api';
 
+function modelDownloadUrl(filePath: string): string {
+  return `${getApiBaseUrl()}/v1/site/models/download?file=${encodeURIComponent(filePath)}`;
+}
 interface ModelFile {
   name: string;
   path: string;
@@ -254,7 +258,7 @@ function triggerMultiDownload(paths: string[]) {
   paths.forEach((p, i) => {
     setTimeout(() => {
       const a = document.createElement('a');
-      a.href = `/api/models/download?file=${encodeURIComponent(p)}`;
+      a.href = modelDownloadUrl(p);
       a.download = '';
       document.body.appendChild(a);
       a.click();
@@ -300,7 +304,7 @@ function FileRow({
         total_bytes: file.size,
       });
 
-      window.location.assign(`/api/models/download?file=${encodeURIComponent(file.path)}`);
+      window.location.assign(modelDownloadUrl(file.path));
     }
   };
 

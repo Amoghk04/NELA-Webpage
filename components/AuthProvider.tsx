@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { UserProfileDto } from '@nela/shared';
+import type { UserProfileDto } from '@/lib/api-types';
 import {
   apiFetch,
   clearTokens,

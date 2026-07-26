@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Crown, LogOut, Save } from 'lucide-react';
 import { apiFetch } from '@/lib/nela-api';
 import { useAuth } from '@/components/AuthProvider';
-import type { EntitlementResponse, UserProfileDto } from '@nela/shared';
+import type { EntitlementResponse, UserProfileDto } from '@/lib/api-types';
 
 export default function AccountPage() {
   const router = useRouter();

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { apiFetch, getAccessToken } from '@/lib/nela-api';
-import type { CheckoutResponse } from '@nela/shared';
+import type { CheckoutResponse } from '@/lib/api-types';
 
 const plans = [
   {

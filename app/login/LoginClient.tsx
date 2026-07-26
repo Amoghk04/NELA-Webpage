@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch, getApiBaseUrl } from '@/lib/nela-api';
-import type { AuthTokenResponse } from '@nela/shared';
+import type { AuthTokenResponse } from '@/lib/api-types';
 import { useAuth } from '@/components/AuthProvider';
 
 type Mode = 'login' | 'register';
