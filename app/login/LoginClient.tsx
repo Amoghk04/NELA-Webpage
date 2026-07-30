@@ -25,7 +25,7 @@ export default function LoginClient() {
   const [name, setName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  const nextParam = searchParams.get('next');
+  const nextParam = searchParams.get('next') ?? searchParams.get('returnTo');
   const returnTo =
     nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
       ? nextParam

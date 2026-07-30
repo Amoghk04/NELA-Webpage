@@ -36,7 +36,7 @@ export default function LinkDevicePage() {
   useEffect(() => {
     if (!isReady) return;
     if (!isAuthenticated) {
-      router.replace('/login?returnTo=/account/link-device');
+      router.replace('/login?next=/account/link-device');
     }
   }, [isReady, isAuthenticated, router]);
 
