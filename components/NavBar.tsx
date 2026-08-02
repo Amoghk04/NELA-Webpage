@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, User, X } from 'lucide-react';
+import { Menu, User, X, Crown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
 import { trackClientEvent } from '@/lib/analytics-client';
@@ -53,6 +53,11 @@ export default function NavBar() {
 
   const profileHref = isAuthenticated ? '/account' : '/login';
   const profileLabel = isAuthenticated ? 'Profile' : 'Sign in';
+  const isPremium =
+    user?.isPremium === true ||
+    user?.displayPlan === 'premium' ||
+    user?.plan === 'starter' ||
+    user?.plan === 'pro';
 
   const linkStyle = (cta?: boolean): CSSProperties =>
     cta
@@ -126,14 +131,16 @@ export default function NavBar() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href={profileHref}
-            className="flex h-10 max-w-[10rem] items-center gap-2 rounded-full border px-2.5 backdrop-blur-md transition-transform duration-200 hover:scale-105 sm:h-11 sm:px-3"
+            className="relative flex h-10 max-w-[10rem] items-center gap-2 rounded-full border px-2.5 backdrop-blur-md transition-transform duration-200 hover:scale-105 sm:h-11 sm:px-3"
             onClick={() => handleNavClick(isAuthenticated ? 'account' : 'login')}
             style={{
               background: 'var(--bg-nav)',
               borderColor: 'var(--border-primary)',
               color: 'var(--text-primary)',
             }}
-            aria-label={profileLabel}
+            aria-label={
+              isPremium ? `${profileLabel} · Premium` : profileLabel
+            }
           >
             {isReady && user?.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -153,6 +160,16 @@ export default function NavBar() {
             <span className="hidden truncate text-sm font-medium sm:inline">
               {isReady && user?.name ? user.name.split(' ')[0] : profileLabel}
             </span>
+            {isPremium ? (
+              <Crown
+                className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full p-0.5"
+                style={{
+                  background: 'var(--accent)',
+                  color: 'var(--bg-primary)',
+                }}
+                aria-hidden
+              />
+            ) : null}
           </Link>
 
           <button

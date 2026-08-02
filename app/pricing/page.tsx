@@ -1,34 +1,118 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch, getAccessToken } from '@/lib/nela-api';
-import type { CheckoutResponse } from '@/lib/api-types';
+import type {
+  CheckoutResponse,
+  ConfirmCheckoutResponse,
+  EntitlementResponse,
+} from '@/lib/api-types';
 
 const plans = [
   {
     id: 'free',
     name: 'Free',
     price: '$0',
-    blurb: 'Private local mode forever. Cloud inference locked.',
+    blurb:
+      'Private local Fast/Smart/Deep forever. Cloud Fast included; Smart/Deep require Premium.',
   },
   {
     id: 'starter',
     name: 'Starter',
     price: 'From $4 credit',
-    blurb: 'Fast Cloud with monthly included usage and standard limits.',
+    blurb:
+      'Premium Cloud: unlock Smart and Deep plus monthly included usage.',
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 'From $20 credit',
-    blurb: 'Higher quotas, deeper reasoning models, artifact planning.',
+    blurb:
+      'Premium Cloud with higher quotas, deeper reasoning, and artifact planning.',
   },
 ] as const;
 
 export default function PricingPage() {
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const paid = params.get('paid') === '1';
+    if (!paid) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (!getAccessToken()) {
+          if (!cancelled) {
+            setMessage(
+              'Sign in to activate Premium for this payment, then open Billing → Confirm Premium.',
+            );
+          }
+          return;
+        }
+        const planParam = params.get('plan');
+        const plan =
+          planParam === 'starter' || planParam === 'pro' ? planParam : undefined;
+        const confirmed = await apiFetch<ConfirmCheckoutResponse>(
+          '/v1/billing/razorpay/confirm',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              plan,
+              paymentLinkId: params.get('razorpay_payment_link_id') ?? undefined,
+              razorpayPaymentId: params.get('razorpay_payment_id') ?? undefined,
+              razorpayPaymentLinkId:
+                params.get('razorpay_payment_link_id') ?? undefined,
+              razorpayPaymentLinkReferenceId:
+                params.get('razorpay_payment_link_reference_id') ?? undefined,
+              razorpayPaymentLinkStatus:
+                params.get('razorpay_payment_link_status') ?? undefined,
+              razorpaySignature: params.get('razorpay_signature') ?? undefined,
+            }),
+          },
+        );
+        if (cancelled) return;
+        if (
+          confirmed.isPremium ||
+          confirmed.paidCloud ||
+          confirmed.displayPlan === 'premium'
+        ) {
+          setSuccess(true);
+          setMessage(
+            "You're on Premium — Smart and Deep are unlocked in Cloud.",
+          );
+          return;
+        }
+        const ent = await apiFetch<EntitlementResponse>('/v1/me/entitlement');
+        if (cancelled) return;
+        if (ent.isPremium || ent.paidCloud || ent.displayPlan === 'premium') {
+          setSuccess(true);
+          setMessage(
+            "You're on Premium — Smart and Deep are unlocked in Cloud.",
+          );
+        } else {
+          setMessage(
+            'Payment received but Premium is not active yet. Open Billing and tap Confirm Premium.',
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setMessage(
+            err instanceof Error
+              ? err.message
+              : 'Could not activate Premium. Open Billing and tap Confirm Premium.',
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const payNow = async (plan: 'starter' | 'pro') => {
     if (!getAccessToken()) {
@@ -38,6 +122,7 @@ export default function PricingPage() {
 
     setBusyPlan(plan);
     setMessage(null);
+    setSuccess(false);
     try {
       const res = await apiFetch<CheckoutResponse>(
         '/v1/billing/razorpay/checkout',
@@ -63,12 +148,15 @@ export default function PricingPage() {
           Pricing
         </h1>
         <p className="mb-12 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-          Local-first by default. Pay only when you want Fast Cloud through NELA
-          Cloud.
+          Local-first by default. Cloud Fast is included on Free. Upgrade to
+          Premium (Starter or Pro) for Smart and Deep in Cloud.
         </p>
 
         {message ? (
-          <p className="mb-6 text-sm" style={{ color: '#e11d48' }}>
+          <p
+            className="mb-6 text-sm"
+            style={{ color: success ? 'var(--accent)' : '#e11d48' }}
+          >
             {message}
           </p>
         ) : null}

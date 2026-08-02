@@ -58,8 +58,14 @@ export default function AccountPage() {
   }, [user]);
 
   const plan = (profile?.plan ?? 'free').toLowerCase();
-  const isPaid = plan === 'starter' || plan === 'pro';
-  const planTitle = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Free';
+  const isPremium =
+    profile?.isPremium === true ||
+    profile?.displayPlan === 'premium' ||
+    entitlement?.isPremium === true ||
+    entitlement?.displayPlan === 'premium' ||
+    plan === 'starter' ||
+    plan === 'pro';
+  const planTitle = isPremium ? 'Premium' : 'Free';
 
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
@@ -117,16 +123,16 @@ export default function AccountPage() {
               className="mb-6 flex items-start gap-3 rounded-2xl border p-4"
               style={{
                 borderColor: 'var(--border-primary)',
-                background: isPaid ? 'var(--accent-glow)' : 'var(--bg-card)',
+                background: isPremium ? 'var(--accent-glow)' : 'var(--bg-card)',
               }}
             >
               <Crown className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--accent)' }} />
               <div>
-                <p className="font-semibold">{planTitle} plan</p>
+                <p className="font-semibold">{planTitle}</p>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {isPaid
-                    ? 'Your plan is managed by NELA Cloud.'
-                    : 'Upgrade anytime from Billing when you are ready.'}
+                  {isPremium
+                    ? 'Smart and Deep are unlocked in Cloud.'
+                    : 'Cloud Fast included. Upgrade for Smart and Deep.'}
                 </p>
               </div>
             </div>
@@ -230,9 +236,11 @@ export default function AccountPage() {
           >
             <h2 className="mb-2 font-semibold">Cloud entitlement</h2>
             <p className="mb-1 text-sm">
-              Cloud enabled: {entitlement.cloudEnabled ? 'yes' : 'no'}
+              Plan: {entitlement.displayPlan === 'premium' || entitlement.isPremium
+                ? 'Premium'
+                : 'Free'}
               {' · '}
-              Paid (Smart/Deep): {entitlement.paidCloud ? 'yes' : 'no'}
+              Smart/Deep: {entitlement.paidCloud ? 'unlocked' : 'locked'}
             </p>
             <p className="mb-1 text-sm">
               Fast free today: {entitlement.fastFree.used} /{' '}

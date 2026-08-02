@@ -6,6 +6,8 @@
 
 export type CloudPlan = "free" | "starter" | "pro";
 
+export type DisplayPlan = "free" | "premium";
+
 export type EntitlementStatus =
   | "inactive"
   | "active"
@@ -20,6 +22,8 @@ export interface UserProfileDto {
   avatarUrl: string | null;
   authProvider: "google" | "email";
   plan: CloudPlan;
+  displayPlan?: DisplayPlan;
+  isPremium?: boolean;
   entitlementStatus: EntitlementStatus;
   updatedAt: string;
 }
@@ -35,6 +39,8 @@ export interface EntitlementResponse {
   cloudEnabled: boolean;
   plan: CloudPlan;
   status: EntitlementStatus;
+  displayPlan?: DisplayPlan;
+  isPremium?: boolean;
   paidCloud: boolean;
   quota: {
     includedUsd: number;
@@ -59,4 +65,14 @@ export interface CheckoutResponse {
 
 export interface BillingManageResponse {
   manageUrl: string;
+}
+
+export interface ConfirmCheckoutResponse {
+  ok: boolean;
+  activated: boolean;
+  plan: CloudPlan;
+  status: EntitlementStatus;
+  paidCloud: boolean;
+  isPremium: boolean;
+  displayPlan?: DisplayPlan;
 }
