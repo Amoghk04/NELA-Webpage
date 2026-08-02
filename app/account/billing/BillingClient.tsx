@@ -10,6 +10,11 @@ import type {
   ConfirmCheckoutResponse,
 } from '@/lib/api-types';
 
+function q(params: URLSearchParams, key: string): string | undefined {
+  const v = params.get(key);
+  return v && v.trim() ? v.trim() : undefined;
+}
+
 export default function BillingClient() {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<string | null>(null);
@@ -78,16 +83,18 @@ export default function BillingClient() {
         planParam === 'starter' || planParam === 'pro' ? planParam : undefined;
       const body = {
         plan,
-        paymentLinkId:
-          searchParams.get('razorpay_payment_link_id') ?? undefined,
-        razorpayPaymentId: searchParams.get('razorpay_payment_id') ?? undefined,
-        razorpayPaymentLinkId:
-          searchParams.get('razorpay_payment_link_id') ?? undefined,
-        razorpayPaymentLinkReferenceId:
-          searchParams.get('razorpay_payment_link_reference_id') ?? undefined,
-        razorpayPaymentLinkStatus:
-          searchParams.get('razorpay_payment_link_status') ?? undefined,
-        razorpaySignature: searchParams.get('razorpay_signature') ?? undefined,
+        paymentLinkId: q(searchParams, 'razorpay_payment_link_id'),
+        razorpayPaymentId: q(searchParams, 'razorpay_payment_id'),
+        razorpayPaymentLinkId: q(searchParams, 'razorpay_payment_link_id'),
+        razorpayPaymentLinkReferenceId: q(
+          searchParams,
+          'razorpay_payment_link_reference_id',
+        ),
+        razorpayPaymentLinkStatus: q(
+          searchParams,
+          'razorpay_payment_link_status',
+        ),
+        razorpaySignature: q(searchParams, 'razorpay_signature'),
       };
       const res = await apiFetch<ConfirmCheckoutResponse>(
         '/v1/billing/razorpay/confirm',

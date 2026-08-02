@@ -57,21 +57,24 @@ export default function PricingPage() {
         const planParam = params.get('plan');
         const plan =
           planParam === 'starter' || planParam === 'pro' ? planParam : undefined;
+        const q = (key: string) => {
+          const v = params.get(key);
+          return v && v.trim() ? v.trim() : undefined;
+        };
         const confirmed = await apiFetch<ConfirmCheckoutResponse>(
           '/v1/billing/razorpay/confirm',
           {
             method: 'POST',
             body: JSON.stringify({
               plan,
-              paymentLinkId: params.get('razorpay_payment_link_id') ?? undefined,
-              razorpayPaymentId: params.get('razorpay_payment_id') ?? undefined,
-              razorpayPaymentLinkId:
-                params.get('razorpay_payment_link_id') ?? undefined,
-              razorpayPaymentLinkReferenceId:
-                params.get('razorpay_payment_link_reference_id') ?? undefined,
-              razorpayPaymentLinkStatus:
-                params.get('razorpay_payment_link_status') ?? undefined,
-              razorpaySignature: params.get('razorpay_signature') ?? undefined,
+              paymentLinkId: q('razorpay_payment_link_id'),
+              razorpayPaymentId: q('razorpay_payment_id'),
+              razorpayPaymentLinkId: q('razorpay_payment_link_id'),
+              razorpayPaymentLinkReferenceId: q(
+                'razorpay_payment_link_reference_id',
+              ),
+              razorpayPaymentLinkStatus: q('razorpay_payment_link_status'),
+              razorpaySignature: q('razorpay_signature'),
             }),
           },
         );
