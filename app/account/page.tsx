@@ -7,6 +7,7 @@ import { Crown, LogOut, Save } from 'lucide-react';
 import { apiFetch } from '@/lib/nela-api';
 import { useAuth } from '@/components/AuthProvider';
 import type { EntitlementResponse, UserProfileDto } from '@/lib/api-types';
+import { isPremiumAccount } from '@/lib/premium';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -57,14 +58,14 @@ export default function AccountPage() {
     }
   }, [user]);
 
-  const plan = (profile?.plan ?? 'free').toLowerCase();
-  const isPremium =
-    profile?.isPremium === true ||
-    profile?.displayPlan === 'premium' ||
-    entitlement?.isPremium === true ||
-    entitlement?.displayPlan === 'premium' ||
-    plan === 'starter' ||
-    plan === 'pro';
+  const isPremium = isPremiumAccount({
+    plan: profile?.plan ?? entitlement?.plan,
+    displayPlan: entitlement?.displayPlan ?? profile?.displayPlan,
+    isPremium: entitlement?.isPremium ?? profile?.isPremium,
+    paidCloud: entitlement?.paidCloud,
+    entitlementStatus: profile?.entitlementStatus,
+    status: entitlement?.status,
+  });
   const planTitle = isPremium ? 'Premium' : 'Free';
 
   const handleSave = async (event: FormEvent) => {

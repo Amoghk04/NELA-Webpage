@@ -9,6 +9,7 @@ import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
 import { trackClientEvent } from '@/lib/analytics-client';
 import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { isPremiumAccount } from '@/lib/premium';
 
 const NAV_LINKS: ReadonlyArray<{
   href: string;
@@ -53,11 +54,12 @@ export default function NavBar() {
 
   const profileHref = isAuthenticated ? '/account' : '/login';
   const profileLabel = isAuthenticated ? 'Profile' : 'Sign in';
-  const isPremium =
-    user?.isPremium === true ||
-    user?.displayPlan === 'premium' ||
-    user?.plan === 'starter' ||
-    user?.plan === 'pro';
+  const isPremium = isPremiumAccount({
+    plan: user?.plan,
+    displayPlan: user?.displayPlan,
+    isPremium: user?.isPremium,
+    entitlementStatus: user?.entitlementStatus,
+  });
 
   const linkStyle = (cta?: boolean): CSSProperties =>
     cta
