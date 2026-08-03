@@ -68,6 +68,31 @@ export default function AccountPage() {
   });
   const planTitle = isPremium ? 'Premium' : 'Free';
 
+  const monthlyGrant = entitlement?.credits?.monthlyGrant ?? 0;
+  const balance = entitlement?.credits?.balance ?? 0;
+  const packCredits = entitlement?.credits?.packCredits ?? 0;
+  const showMonthlyQuota = monthlyGrant > 0;
+  // Subscription grant burns first; packs roll over separately.
+  const subscriptionRemaining = Math.max(0, balance - packCredits);
+  const usedCredits = showMonthlyQuota
+    ? Math.min(monthlyGrant, Math.max(0, monthlyGrant - subscriptionRemaining))
+    : 0;
+  const monthlyPct = showMonthlyQuota
+    ? Math.min(100, Math.round((usedCredits / monthlyGrant) * 100))
+    : 0;
+  const fastLimit = entitlement?.fastFree.limit ?? 0;
+  const fastUsed = entitlement?.fastFree.used ?? 0;
+  const fastPct =
+    !showMonthlyQuota && fastLimit > 0
+      ? Math.min(100, Math.round((fastUsed / fastLimit) * 100))
+      : 0;
+  const quotaPct = showMonthlyQuota ? monthlyPct : fastPct;
+  const quotaLabel = showMonthlyQuota
+    ? `${usedCredits} of ${monthlyGrant} credits used this month`
+    : `Fast free: ${fastUsed} / ${fastLimit} in the last ${
+        entitlement?.fastFree.windowHours ?? 6
+      }h`;
+
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
     if (!profile) return;
@@ -235,7 +260,15 @@ export default function AccountPage() {
               background: 'var(--bg-card)',
             }}
           >
-            <h2 className="mb-2 font-semibold">Cloud entitlement</h2>
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <h2 className="font-semibold">
+                {showMonthlyQuota ? 'Monthly quota' : 'Usage quota'}
+              </h2>
+              <span className="text-sm tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                {quotaPct}%
+              </span>
+            </div>
+
             {(!entitlement.credits || entitlement.credits.balance <= 0) &&
             !entitlement.paidCloud ? (
               <div
@@ -257,39 +290,33 @@ export default function AccountPage() {
                 </Link>
               </div>
             ) : null}
-            <p className="mb-1 text-sm">
-              Plan: {entitlement.displayPlan === 'premium' || entitlement.isPremium
-                ? 'Premium'
-                : 'Free'}
-              {' · '}
-              Smart/Deep: {entitlement.paidCloud ? 'unlocked' : 'locked'}
+
+            <div
+              className="mb-2 h-2.5 w-full overflow-hidden rounded-full"
+              style={{ background: 'var(--bg-secondary)' }}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={quotaPct}
+              aria-label={quotaLabel}
+            >
+              <div
+                className="h-full rounded-full transition-[width] duration-500 ease-out"
+                style={{
+                  width: `${quotaPct}%`,
+                  background: 'var(--accent)',
+                }}
+              />
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {quotaLabel}
             </p>
-            {entitlement.credits ? (
-              <p className="mb-1 text-sm">
-                Credits: {entitlement.credits.balance} balance
-                {entitlement.credits.monthlyGrant > 0
-                  ? ` · ${entitlement.credits.monthlyGrant}/mo grant`
-                  : ''}
-                {entitlement.credits.packCredits > 0
-                  ? ` · ${entitlement.credits.packCredits} from packs`
-                  : ''}
+            {showMonthlyQuota && balance > 0 ? (
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {balance} credits remaining
+                {packCredits > 0 ? ` (${packCredits} from packs)` : ''}
               </p>
             ) : null}
-            <p className="mb-1 text-sm">
-              Fast free ({entitlement.fastFree.windowHours ?? 6}h window):{' '}
-              {entitlement.fastFree.used} / {entitlement.fastFree.limit} used (
-              {entitlement.fastFree.remaining} remaining)
-            </p>
-            <p className="mb-1 text-sm">
-              OR spend this month: ${entitlement.quota.usedUsd.toFixed(4)}
-              {' · '}
-              Face remaining: ${entitlement.quota.remainingUsd.toFixed(2)}
-            </p>
-            <p className="text-sm">
-              Limits: {entitlement.limits.requestsPerMinute} rpm ·{' '}
-              {entitlement.limits.maxInputTokens} in /{' '}
-              {entitlement.limits.maxOutputTokens} out tokens
-            </p>
           </div>
         ) : null}
 
