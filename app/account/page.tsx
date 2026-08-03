@@ -236,6 +236,27 @@ export default function AccountPage() {
             }}
           >
             <h2 className="mb-2 font-semibold">Cloud entitlement</h2>
+            {(!entitlement.credits || entitlement.credits.balance <= 0) &&
+            !entitlement.paidCloud ? (
+              <div
+                className="mb-4 rounded-xl border px-4 py-3 text-sm"
+                style={{
+                  borderColor: 'var(--accent)',
+                  background: 'var(--accent-glow)',
+                }}
+              >
+                <p className="mb-2 font-medium">
+                  Credit balance is empty — Smart and Deep Cloud are locked.
+                </p>
+                <Link
+                  href="/account/billing"
+                  className="font-semibold underline"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Buy credits or upgrade
+                </Link>
+              </div>
+            ) : null}
             <p className="mb-1 text-sm">
               Plan: {entitlement.displayPlan === 'premium' || entitlement.isPremium
                 ? 'Premium'
@@ -243,15 +264,26 @@ export default function AccountPage() {
               {' · '}
               Smart/Deep: {entitlement.paidCloud ? 'unlocked' : 'locked'}
             </p>
+            {entitlement.credits ? (
+              <p className="mb-1 text-sm">
+                Credits: {entitlement.credits.balance} balance
+                {entitlement.credits.monthlyGrant > 0
+                  ? ` · ${entitlement.credits.monthlyGrant}/mo grant`
+                  : ''}
+                {entitlement.credits.packCredits > 0
+                  ? ` · ${entitlement.credits.packCredits} from packs`
+                  : ''}
+              </p>
+            ) : null}
             <p className="mb-1 text-sm">
-              Fast free today: {entitlement.fastFree.used} /{' '}
-              {entitlement.fastFree.limit} used (
+              Fast free ({entitlement.fastFree.windowHours ?? 6}h window):{' '}
+              {entitlement.fastFree.used} / {entitlement.fastFree.limit} used (
               {entitlement.fastFree.remaining} remaining)
             </p>
             <p className="mb-1 text-sm">
-              Quota: ${entitlement.quota.usedUsd.toFixed(2)} / $
-              {entitlement.quota.includedUsd.toFixed(2)} used
-              {' '}(${entitlement.quota.remainingUsd.toFixed(2)} remaining)
+              OR spend this month: ${entitlement.quota.usedUsd.toFixed(4)}
+              {' · '}
+              Face remaining: ${entitlement.quota.remainingUsd.toFixed(2)}
             </p>
             <p className="text-sm">
               Limits: {entitlement.limits.requestsPerMinute} rpm ·{' '}

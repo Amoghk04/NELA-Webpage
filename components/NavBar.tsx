@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, User, X, Crown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
@@ -26,7 +27,12 @@ const NAV_LINKS: ReadonlyArray<{
 export default function NavBar() {
   const { theme } = useTheme();
   const { user, isAuthenticated, isReady } = useAuth();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  if (pathname?.startsWith('/dashboard')) {
+    return null;
+  }
 
   useEffect(() => {
     if (!menuOpen) return;

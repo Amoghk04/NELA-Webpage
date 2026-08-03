@@ -6,6 +6,8 @@
 
 export type CloudPlan = "free" | "starter" | "pro";
 
+export type CreditPackId = "nano" | "plus" | "max";
+
 export type DisplayPlan = "free" | "premium";
 
 export type EntitlementStatus =
@@ -42,6 +44,11 @@ export interface EntitlementResponse {
   displayPlan?: DisplayPlan;
   isPremium?: boolean;
   paidCloud: boolean;
+  credits?: {
+    balance: number;
+    packCredits: number;
+    monthlyGrant: number;
+  };
   quota: {
     includedUsd: number;
     usedUsd: number;
@@ -51,12 +58,44 @@ export interface EntitlementResponse {
     limit: number;
     used: number;
     remaining: number;
+    windowHours?: number;
+    resetsAt?: string | null;
   };
   limits: {
     maxInputTokens: number;
     maxOutputTokens: number;
     requestsPerMinute: number;
   };
+}
+
+export interface BillingPricesResponse {
+  country: string;
+  currency: "INR";
+  usdInrRate: number;
+  plans: {
+    free: { priceLabel: string; monthlyCredits: number; features: string[] };
+    starter: {
+      priceLabel: string;
+      amountPaise: number;
+      monthlyCredits: number;
+      features: string[];
+    };
+    pro: {
+      priceLabel: string;
+      amountPaise: number;
+      monthlyCredits: number;
+      features: string[];
+    };
+  };
+  packs: Array<{
+    id: CreditPackId;
+    label: string;
+    credits: number;
+    priceLabel: string;
+    amountPaise: number;
+  }>;
+  fastFree: { limit: number; windowHours: number };
+  orUsdPerCredit: number;
 }
 
 export interface CheckoutResponse {
