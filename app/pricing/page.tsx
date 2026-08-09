@@ -435,7 +435,7 @@ export default function PricingPage() {
                             type="button"
                             className="pricing-mode-cta-btn"
                             disabled={busy !== null || blocked}
-                            onClick={() => void payPlan(tier.ctaKind)}
+                            onClick={() => void payPlan(tier.ctaKind as PaidPlan)}
                           >
                             {busy === tier.ctaKind
                               ? 'Opening Razorpay…'
