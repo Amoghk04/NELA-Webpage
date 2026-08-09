@@ -7,6 +7,7 @@ import NavBar from '../components/NavBar';
 import ThemeProvider from '../components/ThemeProvider';
 import ThemeToggle from '../components/ThemeToggle';
 import AuthProvider from '../components/AuthProvider';
+import OnboardingModal from '../components/OnboardingModal';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -33,6 +34,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           <AuthProvider>
             <NavBar />
             {children}
+            <OnboardingModal />
             <ThemeToggle />
           </AuthProvider>
         </ThemeProvider>

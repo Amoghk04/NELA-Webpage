@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardShell } from '../DashboardShell';
 import { adminFetch } from '@/lib/admin-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import { BarChart, DonutChart } from '../charts';
 
 type EventRow = {
@@ -24,7 +25,7 @@ export default function UsagePage() {
     void adminFetch<{ events: EventRow[] }>('/v1/admin/usage?limit=100')
       .then((res) => setEvents(res.events))
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Failed to load'),
+        setError(friendlyErrorFromUnknown(err)),
       );
   }, []);
 

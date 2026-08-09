@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DashboardShell } from '../DashboardShell';
 import { adminFetch } from '@/lib/admin-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import {
   AreaChart,
   BarChart,
@@ -65,7 +66,7 @@ export default function OverviewPage() {
 
   useEffect(() => {
     void load().catch((err: unknown) =>
-      setError(err instanceof Error ? err.message : 'Failed to load'),
+      setError(friendlyErrorFromUnknown(err)),
     );
   }, [load]);
 
@@ -83,7 +84,7 @@ export default function OverviewPage() {
       );
       setSeries(seriesRes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Refresh failed');
+      setError(friendlyErrorFromUnknown(err));
     } finally {
       setRefreshing(false);
     }
@@ -229,7 +230,6 @@ export default function OverviewPage() {
                     k="Pack credits"
                     v={String(data.wallets.totalPackCredits)}
                   />
-                  <Row k="OR $/credit" v={String(data.orUsdPerCredit)} />
                 </dl>
               </div>
             </div>

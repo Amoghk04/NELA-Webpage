@@ -8,6 +8,20 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  async redirects() {
+    return [
+      {
+        source: '/docs/faqs',
+        destination: '/faq',
+        permanent: true,
+      },
+      {
+        source: '/docs/faq',
+        destination: '/faq',
+        permanent: true,
+      },
+    ];
+  },
   // Allow access to remote image placeholder.
   images: {
     remotePatterns: [

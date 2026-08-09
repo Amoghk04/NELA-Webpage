@@ -8,6 +8,7 @@ import { apiFetch } from '@/lib/nela-api';
 import { useAuth } from '@/components/AuthProvider';
 import type { EntitlementResponse, UserProfileDto } from '@/lib/api-types';
 import { isPremiumAccount } from '@/lib/premium';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function AccountPage() {
         setEntitlement(ent);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load account');
+          setError(friendlyErrorFromUnknown(err));
         }
       }
     })();
@@ -113,7 +114,7 @@ export default function AccountPage() {
       setNotice('Profile saved');
       setTimeout(() => setNotice(null), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      setError(friendlyErrorFromUnknown(err));
     } finally {
       setSaving(false);
     }
@@ -158,7 +159,7 @@ export default function AccountPage() {
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {isPremium
                     ? 'Smart and Deep are unlocked in Cloud.'
-                    : 'Cloud Fast included. Upgrade for Smart and Deep.'}
+                    : 'Local & Cloud included. Upgrade for Smart and Deep on Cloud.'}
                 </p>
               </div>
             </div>

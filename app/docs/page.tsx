@@ -81,10 +81,6 @@ export default function DocsPage() {
           <h2 className="text-xl font-semibold mb-1">Trouble Shooting</h2>
           <p className="text-sm">Fix common indexing, model, and environment issues quickly.</p>
         </TrackedDocLink>
-        <TrackedDocLink href="/docs/faqs" source="docs_landing" className={`${styles.docsCard} p-5`}>
-          <h2 className="text-xl font-semibold mb-1">FAQs</h2>
-          <p className="text-sm">Get direct answers on locality, modes, models, and workspace usage.</p>
-        </TrackedDocLink>
       </div>
     </section>
   );

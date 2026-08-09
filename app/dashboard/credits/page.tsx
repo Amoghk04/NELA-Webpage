@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardShell } from '../DashboardShell';
 import { adminFetch } from '@/lib/admin-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import { BarChart, DonutChart } from '../charts';
 
 type Entry = {
@@ -23,7 +24,7 @@ export default function CreditsPage() {
     void adminFetch<{ entries: Entry[] }>('/v1/admin/credits?limit=100')
       .then((res) => setEntries(res.entries))
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Failed to load'),
+        setError(friendlyErrorFromUnknown(err)),
       );
   }, []);
 

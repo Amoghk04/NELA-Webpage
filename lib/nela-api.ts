@@ -14,6 +14,9 @@ export type StoredProfile = {
   plan: string;
   entitlementStatus: string;
   updatedAt: string;
+  occupation?: string | null;
+  field?: string | null;
+  onboardingCompleted?: boolean;
 };
 
 export function getApiBaseUrl(): string {
@@ -145,10 +148,12 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as { message?: string }).message ??
-        `API ${res.status} ${res.statusText}`,
-    );
+    const bodyMessage = (err as { message?: string; code?: string }).message;
+    const code = (err as { code?: string }).code;
+    const combined = [code, bodyMessage, `API ${res.status}`]
+      .filter(Boolean)
+      .join(": ");
+    throw new Error(combined || `API ${res.status} ${res.statusText}`);
   }
 
   return (await res.json()) as T;

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { adminLogin } from '@/lib/admin-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 
 export default function DashboardLoginInner() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function DashboardLoginInner() {
         next && next.startsWith('/dashboard/') ? next : '/dashboard/overview',
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(friendlyErrorFromUnknown(err));
     } finally {
       setBusy(false);
     }

@@ -28,6 +28,9 @@ export interface UserProfileDto {
   isPremium?: boolean;
   entitlementStatus: EntitlementStatus;
   updatedAt: string;
+  occupation?: string | null;
+  field?: string | null;
+  onboardingCompleted?: boolean;
 }
 
 export interface AuthTokenResponse {
@@ -35,6 +38,23 @@ export interface AuthTokenResponse {
   refreshToken: string;
   expiresIn: number;
   profile: UserProfileDto;
+}
+
+export interface EmailRegisterResponse {
+  requiresVerification: true;
+  email: string;
+  message: string;
+}
+
+export interface EmailVerifyResponse {
+  ok: true;
+  email: string;
+  message: string;
+}
+
+export interface EmailResendResponse {
+  ok: true;
+  message: string;
 }
 
 export interface EntitlementResponse {
@@ -102,8 +122,37 @@ export interface CheckoutResponse {
   checkoutUrl: string;
 }
 
-export interface BillingManageResponse {
-  manageUrl: string;
+export interface CancelSubscriptionResponse {
+  ok: boolean;
+  cancelAtPeriodEnd: boolean;
+  accessUntil: string | null;
+  plan: CloudPlan;
+  message: string;
+}
+
+export interface BillingTransactionDto {
+  id: string;
+  kind: "subscription" | "pack";
+  sku: string;
+  label: string;
+  amountPaise: number;
+  amountLabel: string;
+  currency: string;
+  createdAt: string;
+}
+
+export interface BillingTransactionsResponse {
+  transactions: BillingTransactionDto[];
+}
+
+export interface SubscriptionBillingStatusResponse {
+  subscription: {
+    plan: "starter" | "pro" | "free";
+    status: string | null;
+    cancelAtPeriodEnd: boolean;
+    accessUntil: string | null;
+    isRecurring: boolean;
+  } | null;
 }
 
 export interface ConfirmCheckoutResponse {

@@ -135,15 +135,6 @@ export default function DocsSidebar() {
               Trouble Shooting
             </Link>
           </li>
-          <li>
-            <Link
-              href="/docs/faqs"
-              onClick={() => trackDocsNav('/docs/faqs')}
-              className={`${styles.docsSidebarLink} ${isActive('/docs/faqs') ? styles.docsSidebarLinkActive : ''}`}
-            >
-              FAQs
-            </Link>
-          </li>
           </ul>
         </nav>
       </div>

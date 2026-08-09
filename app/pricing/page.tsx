@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import { apiFetch, getAccessToken, getApiBaseUrl } from '@/lib/nela-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
+import { evaluatePlanCheckout, type PaidPlan } from '@/lib/planCheckout';
 import type {
   BillingPricesResponse,
   CheckoutResponse,
@@ -10,9 +13,13 @@ import type {
   CreditPackId,
   EntitlementResponse,
 } from '@/lib/api-types';
+import { buildModeTiers } from './featureMatrix';
 
 export default function PricingPage() {
   const [prices, setPrices] = useState<BillingPricesResponse | null>(null);
+  const [entitlement, setEntitlement] = useState<EntitlementResponse | null>(
+    null,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -30,6 +37,25 @@ export default function PricingPage() {
           setPrices(null);
           setMessage('Could not load live prices. Showing defaults.');
         }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!getAccessToken()) {
+        if (!cancelled) setEntitlement(null);
+        return;
+      }
+      try {
+        const ent = await apiFetch<EntitlementResponse>('/v1/me/entitlement');
+        if (!cancelled) setEntitlement(ent);
+      } catch {
+        if (!cancelled) setEntitlement(null);
       }
     })();
     return () => {
@@ -110,9 +136,7 @@ export default function PricingPage() {
       } catch (err) {
         if (!cancelled) {
           setMessage(
-            err instanceof Error
-              ? err.message
-              : 'Could not activate payment. Open Billing and tap Confirm.',
+            friendlyErrorFromUnknown(err),
           );
         }
       }
@@ -122,7 +146,18 @@ export default function PricingPage() {
     };
   }, []);
 
-  const payPlan = async (plan: 'starter' | 'pro') => {
+  const payPlan = async (plan: PaidPlan) => {
+    const decision = evaluatePlanCheckout({
+      plan: entitlement?.plan,
+      status: entitlement?.status,
+      paidCloud: entitlement?.paidCloud,
+      target: plan,
+    });
+    if (!decision.allowed) {
+      setSuccess(false);
+      setMessage(decision.reason ?? "You're already on this plan or a higher one.");
+      return;
+    }
     if (!getAccessToken()) {
       window.location.href = `/login?next=${encodeURIComponent(`/account/billing?plan=${plan}&auto=1`)}`;
       return;
@@ -141,7 +176,7 @@ export default function PricingPage() {
       if (!res.checkoutUrl) throw new Error('No Razorpay checkout URL returned');
       window.location.href = res.checkoutUrl;
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Checkout failed');
+      setMessage(friendlyErrorFromUnknown(err));
       setBusy(null);
     }
   };
@@ -165,7 +200,7 @@ export default function PricingPage() {
       if (!res.checkoutUrl) throw new Error('No Razorpay checkout URL returned');
       window.location.href = res.checkoutUrl;
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Checkout failed');
+      setMessage(friendlyErrorFromUnknown(err));
       setBusy(null);
     }
   };
@@ -183,15 +218,45 @@ export default function PricingPage() {
     { id: 'max' as const, label: 'Max', credits: 2000, priceLabel: '₹1,799', amountPaise: 179900 },
   ];
 
+  const modeTiers = useMemo(
+    () =>
+      buildModeTiers({
+        fastLimit,
+        fastWindow,
+        starterCredits,
+        proCredits,
+        starterPriceLabel: starterLabel,
+        proPriceLabel: proLabel,
+      }),
+    [fastLimit, fastWindow, starterCredits, proCredits, starterLabel, proLabel],
+  );
+
+  const starterCheckout = evaluatePlanCheckout({
+    plan: entitlement?.plan,
+    status: entitlement?.status,
+    paidCloud: entitlement?.paidCloud,
+    target: 'starter',
+  });
+  const proCheckout = evaluatePlanCheckout({
+    plan: entitlement?.plan,
+    status: entitlement?.status,
+    paidCloud: entitlement?.paidCloud,
+    target: 'pro',
+  });
+
+  const planCta = (plan: PaidPlan) =>
+    plan === 'starter' ? starterCheckout : proCheckout;
+
   return (
     <main className="min-h-screen pt-28 px-6 pb-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <h1 className="font-space text-4xl md:text-5xl font-bold tracking-tight mb-3">
           Pricing
         </h1>
         <p className="mb-12 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-          Local-first by default. Cloud Fast: {fastLimit} / {fastWindow}h on Free.
-          Premium grants monthly credits; pay-as-you-go packs top up the same wallet.
+          Local &amp; Cloud is free to start — on-device modes plus Cloud Fast (
+          {fastLimit} / {fastWindow}h). Premium grants monthly credits;
+          pay-as-you-go packs top up the same wallet.
           {prices ? ` Prices for ${prices.country} (INR checkout).` : null}
         </p>
 
@@ -217,8 +282,8 @@ export default function PricingPage() {
               {freeLabel}
             </p>
             <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-              Private local modes forever. Cloud Fast {fastLimit}/{fastWindow}h.
-              Buy credits anytime for Smart/Deep.
+              Local &amp; Cloud: private on-device modes plus Cloud Fast{' '}
+              {fastLimit}/{fastWindow}h. Buy credits anytime for Smart/Deep.
             </p>
             <Link
               href="/download"
@@ -245,13 +310,24 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              disabled={busy !== null}
+              disabled={busy !== null || !starterCheckout.allowed}
               onClick={() => void payPlan('starter')}
               className="inline-flex rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60"
               style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
             >
-              {busy === 'starter' ? 'Opening Razorpay…' : 'Pay Now'}
+              {busy === 'starter'
+                ? 'Opening Razorpay…'
+                : starterCheckout.allowed
+                  ? starterCheckout.ctaLabel === 'Get now'
+                    ? 'Pay Now'
+                    : (starterCheckout.ctaLabel ?? 'Pay Now')
+                  : (starterCheckout.ctaLabel ?? 'Current plan')}
             </button>
+            {!starterCheckout.allowed && starterCheckout.reason ? (
+              <p className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {starterCheckout.reason}
+              </p>
+            ) : null}
           </div>
 
           <div
@@ -270,49 +346,159 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              disabled={busy !== null}
+              disabled={busy !== null || !proCheckout.allowed}
               onClick={() => void payPlan('pro')}
               className="inline-flex rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60"
               style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
             >
-              {busy === 'pro' ? 'Opening Razorpay…' : 'Pay Now'}
+              {busy === 'pro'
+                ? 'Opening Razorpay…'
+                : proCheckout.allowed
+                  ? proCheckout.ctaLabel === 'Get now'
+                    ? 'Pay Now'
+                    : (proCheckout.ctaLabel ?? 'Pay Now')
+                  : (proCheckout.ctaLabel ?? 'Current plan')}
             </button>
+            {!proCheckout.allowed && proCheckout.reason ? (
+              <p className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {proCheckout.reason}
+              </p>
+            ) : null}
           </div>
         </div>
 
-        <h2 className="font-space text-2xl font-bold mb-2">Buy credits</h2>
-        <p className="mb-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Pay as you go — packs roll over. Same wallet as subscription grants.
-        </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          {packs.map((pack) => (
-            <div
-              key={pack.id}
-              className="p-6 rounded-2xl border"
-              style={{
-                borderColor: 'var(--border-primary)',
-                background: 'var(--bg-card)',
-              }}
-            >
-              <h3 className="font-space text-xl font-bold mb-1">{pack.label}</h3>
-              <p className="mb-1 font-medium" style={{ color: 'var(--accent)' }}>
-                {pack.priceLabel}
-              </p>
-              <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-                {pack.credits} credits
-              </p>
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void payPack(pack.id)}
-                className="inline-flex rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60"
-                style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
-              >
-                {busy === pack.id ? 'Opening Razorpay…' : 'Buy'}
-              </button>
+        <section className="mb-12">
+          <h2 className="font-space text-2xl font-bold mb-2">Compare modes</h2>
+          <p className="mb-6 text-sm max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
+            Each column builds on the one to its left. Local &amp; Cloud is free;
+            Smart and Deep need Premium or credit packs. Team is coming soon.
+          </p>
+
+          <div className="pricing-mode-compare">
+            <div className="pricing-mode-stack" role="list">
+              {modeTiers.map((tier) => {
+                const checkout =
+                  tier.ctaKind === 'download' || tier.ctaKind === 'team'
+                    ? null
+                    : planCta(tier.ctaKind);
+                const blocked = checkout !== null && !checkout.allowed;
+                const teamMailto =
+                  'mailto:nelalocal.official@gmail.com?subject=NELA%20Team%20plan%20interest';
+                return (
+                  <article
+                    key={tier.id}
+                    className="pricing-mode-card"
+                    data-tier={tier.id}
+                    role="listitem"
+                  >
+                    <h3>
+                      {tier.title}
+                      {tier.comingSoon ? (
+                        <span className="pricing-mode-badge">Coming soon</span>
+                      ) : null}
+                    </h3>
+                    {tier.includesFrom ? (
+                      <p className="pricing-mode-includes">{tier.includesFrom}</p>
+                    ) : (
+                      <p className="pricing-mode-includes">Base</p>
+                    )}
+                    <p className="pricing-mode-price">{tier.priceLabel}</p>
+                    {tier.priceHint ? (
+                      <p className="pricing-mode-price-hint">{tier.priceHint}</p>
+                    ) : null}
+                    <p className="pricing-mode-blurb">{tier.blurb}</p>
+                    <ul className="pricing-mode-features">
+                      {tier.features.map((feature) => (
+                        <li key={feature}>
+                          <span className="pricing-mode-tick" aria-hidden>
+                            <Check size={11} strokeWidth={3} />
+                          </span>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="pricing-mode-cta">
+                      {tier.ctaKind === 'download' ? (
+                        <Link href="/download" className="pricing-mode-cta-btn">
+                          {tier.ctaLabel}
+                        </Link>
+                      ) : tier.ctaKind === 'team' ? (
+                        <a
+                          href={teamMailto}
+                          className="pricing-mode-cta-btn pricing-mode-cta-btn--outline"
+                        >
+                          {tier.ctaLabel}
+                        </a>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="pricing-mode-cta-btn"
+                            disabled={busy !== null || blocked}
+                            onClick={() => void payPlan(tier.ctaKind)}
+                          >
+                            {busy === tier.ctaKind
+                              ? 'Opening Razorpay…'
+                              : blocked
+                                ? (checkout?.ctaLabel ?? 'Current plan')
+                                : (checkout?.ctaLabel ?? tier.ctaLabel)}
+                          </button>
+                          {blocked && checkout?.reason ? (
+                            <p
+                              className="text-xs text-center"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              {checkout.reason}
+                            </p>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="font-space text-2xl font-bold mb-2">
+            Credit top-up packs
+          </h2>
+          <p className="mb-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Available on any plan — packs roll over and unlock Cloud Smart / Deep
+            while balance lasts. Same wallet as subscription grants.
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {packs.map((pack) => (
+              <div
+                key={pack.id}
+                className="p-6 rounded-2xl border"
+                style={{
+                  borderColor: 'var(--border-primary)',
+                  background: 'var(--bg-card)',
+                }}
+              >
+                <h3 className="font-space text-xl font-bold mb-1">{pack.label}</h3>
+                <p className="mb-1 font-medium" style={{ color: 'var(--accent)' }}>
+                  {pack.priceLabel}
+                </p>
+                <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+                  {pack.credits} credits
+                </p>
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void payPack(pack.id)}
+                  className="inline-flex rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                  style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
+                >
+                  {busy === pack.id ? 'Opening Razorpay…' : 'Buy top-up'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );

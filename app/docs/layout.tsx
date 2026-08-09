@@ -9,7 +9,6 @@ const mobileQuickLinks = [
   { href: '/docs/features', label: 'Features' },
   { href: '/docs/models', label: 'Models' },
   { href: '/docs/trouble-shooting', label: 'Trouble Shooting' },
-  { href: '/docs/faqs', label: 'FAQs' },
 ];
 
 export default function DocsLayout({ children }: { children: ReactNode }) {

@@ -20,19 +20,23 @@ const NAV_LINKS: ReadonlyArray<{
 }> = [
   { href: '/', label: 'Home', id: 'home' },
   { href: '/docs', label: 'Docs', id: 'docs' },
+  { href: '/faq', label: 'FAQ', id: 'faq' },
   { href: '/pricing', label: 'Pricing', id: 'pricing' },
   { href: '/download', label: 'Download', id: 'download', cta: true },
 ];
+
+function pathMatches(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export default function NavBar() {
   const { theme } = useTheme();
   const { user, isAuthenticated, isReady } = useAuth();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  if (pathname?.startsWith('/dashboard')) {
-    return null;
-  }
+  const hideForDashboard = Boolean(pathname?.startsWith('/dashboard'));
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -50,6 +54,10 @@ export default function NavBar() {
     };
   }, [menuOpen]);
 
+  if (hideForDashboard) {
+    return null;
+  }
+
   const handleNavClick = (destination: string) => {
     trackClientEvent(ANALYTICS_EVENTS.NavClick, {
       source: 'navbar',
@@ -60,6 +68,8 @@ export default function NavBar() {
 
   const profileHref = isAuthenticated ? '/account' : '/login';
   const profileLabel = isAuthenticated ? 'Profile' : 'Sign in';
+  const profileActive =
+    pathMatches(pathname, '/account') || pathMatches(pathname, '/login');
   const isPremium = isPremiumAccount({
     plan: user?.plan,
     displayPlan: user?.displayPlan,
@@ -67,10 +77,27 @@ export default function NavBar() {
     entitlementStatus: user?.entitlementStatus,
   });
 
-  const linkStyle = (cta?: boolean): CSSProperties =>
-    cta
-      ? { background: 'var(--accent)', color: 'var(--bg-primary)' }
-      : { color: 'var(--text-primary)' };
+  const linkStyle = (opts: {
+    cta?: boolean;
+    active?: boolean;
+  }): CSSProperties => {
+    if (opts.cta) {
+      return {
+        background: 'var(--accent)',
+        color: 'var(--bg-primary)',
+        boxShadow: opts.active ? '0 0 0 2px var(--accent-glow)' : undefined,
+        outline: opts.active ? '2px solid var(--text-primary)' : undefined,
+        outlineOffset: opts.active ? '2px' : undefined,
+      };
+    }
+    if (opts.active) {
+      return {
+        color: 'var(--accent)',
+        background: 'var(--bg-card-hover)',
+      };
+    }
+    return { color: 'var(--text-primary)' };
+  };
 
   return (
     <>
@@ -88,7 +115,9 @@ export default function NavBar() {
           onClick={() => handleNavClick('home_logo')}
           style={{
             background: 'var(--bg-nav)',
-            borderColor: 'var(--border-primary)',
+            borderColor: pathMatches(pathname, '/')
+              ? 'var(--accent)'
+              : 'var(--border-primary)',
           }}
         >
           <Image
@@ -107,33 +136,43 @@ export default function NavBar() {
             borderColor: 'var(--border-primary)',
           }}
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.id}
-              href={link.href}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-opacity duration-200 hover:opacity-90 lg:px-4 lg:text-base ${
-                link.cta ? 'shadow-sm' : ''
-              }`}
-              style={linkStyle(link.cta)}
-              onClick={() => {
-                handleNavClick(link.id);
-                if (link.id === 'download') {
-                  trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
-                    source: 'navbar_cta',
-                    destination: '/download',
-                  });
-                }
-              }}
-              onMouseEnter={(e) => {
-                if (!link.cta) e.currentTarget.style.color = 'var(--accent)';
-              }}
-              onMouseLeave={(e) => {
-                if (!link.cta) e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const active = pathMatches(pathname, link.href);
+            return (
+              <Link
+                key={link.id}
+                href={link.href}
+                aria-current={active ? 'page' : undefined}
+                className={`rounded-full px-3 py-1 text-sm font-medium transition-opacity duration-200 hover:opacity-90 lg:px-4 lg:text-base ${
+                  link.cta ? 'shadow-sm' : ''
+                }`}
+                style={linkStyle({ cta: link.cta, active })}
+                onClick={() => {
+                  handleNavClick(link.id);
+                  if (link.id === 'download') {
+                    trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+                      source: 'navbar_cta',
+                      destination: '/download',
+                    });
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  if (!link.cta && !active) {
+                    e.currentTarget.style.color = 'var(--accent)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!link.cta) {
+                    e.currentTarget.style.color = active
+                      ? 'var(--accent)'
+                      : 'var(--text-primary)';
+                  }
+                }}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
@@ -141,10 +180,13 @@ export default function NavBar() {
             href={profileHref}
             className="relative flex h-10 max-w-[10rem] items-center gap-2 rounded-full border px-2.5 backdrop-blur-md transition-transform duration-200 hover:scale-105 sm:h-11 sm:px-3"
             onClick={() => handleNavClick(isAuthenticated ? 'account' : 'login')}
+            aria-current={profileActive ? 'page' : undefined}
             style={{
               background: 'var(--bg-nav)',
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)',
+              borderColor: profileActive
+                ? 'var(--accent)'
+                : 'var(--border-primary)',
+              color: profileActive ? 'var(--accent)' : 'var(--text-primary)',
             }}
             aria-label={
               isPremium ? `${profileLabel} · Premium` : profileLabel
@@ -162,7 +204,10 @@ export default function NavBar() {
                 className="flex h-7 w-7 items-center justify-center rounded-full"
                 style={{ background: 'var(--bg-card)' }}
               >
-                <User className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+                <User
+                  className="h-4 w-4"
+                  style={{ color: 'var(--text-secondary)' }}
+                />
               </span>
             )}
             <span className="hidden truncate text-sm font-medium sm:inline">
@@ -214,32 +259,42 @@ export default function NavBar() {
               borderColor: 'var(--border-primary)',
             }}
           >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={`rounded-xl px-4 py-3 text-base font-medium ${
-                  link.cta ? 'text-center' : ''
-                }`}
-                style={linkStyle(link.cta)}
-                onClick={() => {
-                  handleNavClick(link.id);
-                  if (link.id === 'download') {
-                    trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
-                      source: 'navbar_mobile',
-                      destination: '/download',
-                    });
-                  }
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = pathMatches(pathname, link.href);
+              return (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`rounded-xl px-4 py-3 text-base font-medium ${
+                    link.cta ? 'text-center' : ''
+                  }`}
+                  style={linkStyle({ cta: link.cta, active })}
+                  onClick={() => {
+                    handleNavClick(link.id);
+                    if (link.id === 'download') {
+                      trackClientEvent(ANALYTICS_EVENTS.DownloadClick, {
+                        source: 'navbar_mobile',
+                        destination: '/download',
+                      });
+                    }
+                  }}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <Link
               href={profileHref}
               className="rounded-xl px-4 py-3 text-base font-medium"
-              style={{ color: 'var(--text-primary)' }}
-              onClick={() => handleNavClick(isAuthenticated ? 'account' : 'login')}
+              aria-current={profileActive ? 'page' : undefined}
+              style={{
+                color: profileActive ? 'var(--accent)' : 'var(--text-primary)',
+                background: profileActive ? 'var(--bg-card-hover)' : undefined,
+              }}
+              onClick={() =>
+                handleNavClick(isAuthenticated ? 'account' : 'login')
+              }
             >
               {profileLabel}
             </Link>

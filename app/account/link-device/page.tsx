@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/nela-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import { useAuth } from '@/components/AuthProvider';
 
 const CODE_LENGTH = 8;
@@ -89,7 +90,7 @@ export default function LinkDevicePage() {
       );
       setDigits(Array(CODE_LENGTH).fill(''));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to link device');
+      setError(friendlyErrorFromUnknown(err));
     } finally {
       setBusy(false);
     }

@@ -4,7 +4,9 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch, getApiBaseUrl } from '@/lib/nela-api';
 import type { AuthTokenResponse } from '@/lib/api-types';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import { useAuth } from '@/components/AuthProvider';
+import GoogleLogo from '@/components/GoogleLogo';
 
 type Mode = 'login' | 'register';
 
@@ -22,6 +24,7 @@ export default function LoginClient() {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -71,7 +74,7 @@ export default function LoginClient() {
         router.replace(returnTo);
       } catch (err) {
         if (!cancelled) {
-          setStatus(err instanceof Error ? err.message : 'Sign-in failed');
+          setStatus(friendlyErrorFromUnknown(err));
         }
       }
     })();
@@ -84,6 +87,12 @@ export default function LoginClient() {
   const submitEmail = async (event: FormEvent) => {
     event.preventDefault();
     setFormError(null);
+
+    if (mode === 'register' && password !== confirmPassword) {
+      setFormError('Passwords do not match. Check them and try again.');
+      return;
+    }
+
     setBusy(true);
     try {
       const path =
@@ -102,7 +111,7 @@ export default function LoginClient() {
       setStatus('Signed in. Redirecting…');
       router.replace(returnTo);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Authentication failed');
+      setFormError(friendlyErrorFromUnknown(err));
       setBusy(false);
     }
   };
@@ -159,20 +168,22 @@ export default function LoginClient() {
             {isDesktopApproval && deviceGoogleStartUrl ? (
               <a
                 href={deviceGoogleStartUrl}
-                className="mb-6 inline-flex w-full items-center justify-center rounded-full px-5 py-3 font-semibold"
+                className="mb-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 font-semibold"
                 style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
                 onClick={() => setStatus('Redirecting to Google…')}
               >
+                <GoogleLogo />
                 Approve with Google
               </a>
             ) : (
               <>
                 <a
                   href={webGoogleStartUrl}
-                  className="mb-4 inline-flex w-full items-center justify-center rounded-full px-5 py-3 font-semibold"
+                  className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 font-semibold"
                   style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
                   onClick={() => setStatus('Redirecting to Google…')}
                 >
+                  <GoogleLogo />
                   Continue with Google
                 </a>
 
@@ -271,6 +282,27 @@ export default function LoginClient() {
                       autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                     />
                   </label>
+                  {mode === 'register' ? (
+                    <label className="block text-sm">
+                      <span className="mb-1 block" style={{ color: 'var(--text-secondary)' }}>
+                        Confirm password
+                      </span>
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full rounded-xl border px-4 py-3 outline-none"
+                        style={{
+                          borderColor: 'var(--border-primary)',
+                          background: 'var(--bg-card)',
+                          color: 'var(--text-primary)',
+                        }}
+                        autoComplete="new-password"
+                      />
+                    </label>
+                  ) : null}
                   {formError ? (
                     <p className="text-sm" style={{ color: '#e11d48' }}>
                       {formError}

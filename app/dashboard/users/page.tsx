@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { DashboardShell } from '../DashboardShell';
 import { adminFetch } from '@/lib/admin-api';
+import { friendlyErrorFromUnknown } from '@/lib/friendlyError';
 import { BarChart, DonutChart } from '../charts';
 
 type UserRow = {
@@ -27,7 +28,7 @@ export default function UsersPage() {
       const res = await adminFetch<{ users: UserRow[] }>(`/v1/admin/users${qs}`);
       setUsers(res.users);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(friendlyErrorFromUnknown(err));
     }
   };
 
