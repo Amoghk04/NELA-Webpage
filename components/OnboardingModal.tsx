@@ -134,8 +134,11 @@ export default function OnboardingModal() {
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  if (step === 0) setOccupation(opt.id);
-                  else setField(opt.id);
+                  if (step === 0) {
+                    setOccupation(opt.id as OnboardingOccupationId);
+                  } else {
+                    setField(opt.id as OnboardingFieldId);
+                  }
                 }}
                 className="rounded-full border px-3.5 py-2 text-sm font-medium transition disabled:opacity-60"
                 style={{
