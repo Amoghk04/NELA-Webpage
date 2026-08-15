@@ -7,6 +7,7 @@ import { adminLogout } from '@/lib/admin-api';
 
 const links = [
   { href: '/dashboard/overview', label: 'Overview' },
+  { href: '/dashboard/inference', label: 'Inference' },
   { href: '/dashboard/users', label: 'Users' },
   { href: '/dashboard/usage', label: 'Usage' },
   { href: '/dashboard/credits', label: 'Credits' },
